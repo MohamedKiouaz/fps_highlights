@@ -81,52 +81,53 @@ keep_after = 5 # sec
 keep_before = 4 # sec
 
 for filename in os.listdir(folder):
-    if filename.endswith(".mp4"):
-        path = os.path.join(folder, filename)
-        print(f'Working on {path}.')
-        clip = mp.VideoFileClip(path)
-        audio = mp.AudioFileClip(path)
+    if not filename.endswith(".mp4"):
+        continue
 
-        if not generate_inputs:
-            # We need to load the model to make prediction if a frame is intresting or not
-            path = Path('inputs')
-            data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
-            input_shape = data.one_batch()[0].shape[1:]
-            learn = vision_learner(data, models.resnet50, bn_final=True, model_dir="models")
-            learn = learn.load('model')
+    path = os.path.join(folder, filename)
+    print(f'Working on {path}.')
+    clip = mp.VideoFileClip(path)
+    audio = mp.AudioFileClip(path)
+
+    if not generate_inputs:
+        # We need to load the model to make prediction if a frame is intresting or not
+        path = Path('inputs')
+        data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
+        learn = vision_learner(data, models.resnet50, bn_final=True, model_dir="models")
+        learn = learn.load('model')
+    
+    mask = []
+    i = 0
+    for frame in tqdm(clip.iter_frames(), total=int(clip.duration * clip.fps)):
+        i += 1
+        if generate_inputs and i % input_generation_sampling != 0:
+            continue
         
-        mask = []
-        i = 0
-        for frame in tqdm(clip.iter_frames(), total=int(clip.duration * clip.fps)):
-            i += 1
-            if generate_inputs and i % input_generation_sampling != 0:
-                continue
-            
-            if not generate_inputs and i % predict_sampling != 0:
-                mask.append(False)
-                continue
+        if not generate_inputs and i % predict_sampling != 0:
+            mask.append(False)
+            continue
 
-            subf = {'center': get_subframe(frame, (719, 1289), (100, 100)),
-                    'teamsleft': get_subframe(frame, (88, 2049), (100, 100))}
+        subf = {'center': get_subframe(frame, (719, 1289), (100, 100)),
+                'teamsleft': get_subframe(frame, (88, 2049), (100, 100))}
 
-            pred = []
-            for key, subframe in subf.items():
-                subframe = subframe.astype(np.uint8)
-                if not generate_inputs:
-                    pred_class, pred_idx, outputs = learn.predict(subframe)
-                    pred.append(pred_class == 'true')
-                    imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
-                else:
-                    imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
+        pred = []
+        for key, subframe in subf.items():
+            subframe = subframe.astype(np.uint8)
+            if not generate_inputs:
+                pred_class, pred_idx, outputs = learn.predict(subframe)
+                pred.append(pred_class == 'true')
+                imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
+            else:
+                imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
 
-            mask.append(any(pred))
+        mask.append(any(pred))
 
-        if not generate_inputs:
-            mask = expand_ones(mask, keep_before * clip.fps, keep_after * clip.fps)
+    if not generate_inputs:
+        mask = expand_ones(mask, keep_before * clip.fps, keep_after * clip.fps)
 
-            mask_indices = mask.nonzero()[0]
-            
-            filtered_clip = create_subclip(clip, mask_indices)
-            
-            filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
+        mask_indices = mask.nonzero()[0]
+        
+        filtered_clip = create_subclip(clip, mask_indices)
+        
+        filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
 

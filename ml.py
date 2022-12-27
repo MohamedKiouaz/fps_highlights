@@ -18,14 +18,6 @@ if __name__ == '__main__':
     input_shape = data.one_batch()[0].shape[1:]
     learn = vision_learner(data, vision.models.resnet50, bn_final=True, model_dir="models", metrics=[accuracy])
     
-
-    learn = vision_learner(data, vision.models.resnet50, bn_final=True, model_dir="models")
-
-    try:
-        learn.load('model')
-    except Exception:
-        print("Cannot load model, starting from scratch.")
-
     for _ in range(epochs):
         learn.fit(1)
 
