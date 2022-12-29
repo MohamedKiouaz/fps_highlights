@@ -3,11 +3,9 @@ import os
 import numpy as np
 from tqdm import tqdm
 import imageio
-import fastai
 from fastai.vision.all import *
 from fastai.vision.data import ImageDataLoaders
 from fastai.vision.learner import vision_learner
-
 
 def expand_ones(arr, N, M):
     """
@@ -23,7 +21,7 @@ def expand_ones(arr, N, M):
     # Find the indices of the zeros in the array
     N = int(N)
     M = int(M)
-    print(arr.sum() / 44100)
+    print(arr.sum() / arr.size)
     zero_indices = np.where(arr == 1)[0]
 
     # Replace the elements before and after each zero with zeros
@@ -31,7 +29,7 @@ def expand_ones(arr, N, M):
         start = max(0, i - N)
         end = min(len(arr), i + M + 1)
         arr[start:end] = 1
-    print(arr.sum() / 44100)
+    print(arr.sum() / arr.size)
     return arr
 
 def get_subframe(image, position, subframe_size):
@@ -76,7 +74,7 @@ def create_subclip(clip, indices):
 folder = r"D:\Videos\Radeon ReLive\Apex Legends\a"
 generate_inputs = False
 input_generation_sampling = 50 # if in input generation, generate one input every 
-predict_sampling = 25 # if in prediction mode, use one frame every
+predict_sampling = 20 # if in prediction mode, use one frame every
 keep_after = 5 # sec
 keep_before = 4 # sec
 
@@ -93,8 +91,8 @@ for filename in os.listdir(folder):
         # We need to load the model to make prediction if a frame is intresting or not
         path = Path('inputs')
         data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
-        learn = vision_learner(data, models.resnet50, bn_final=True, model_dir="models")
-        learn = learn.load('model')
+        learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
+        learn = learn.load('resnet18')
     
     mask = []
     i = 0
