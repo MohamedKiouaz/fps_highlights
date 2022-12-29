@@ -125,7 +125,8 @@ for filename in os.listdir(folder):
 
         mask_indices = mask.nonzero()[0]
         
-        filtered_clip = create_subclip(clip, mask_indices)
-        
-        filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
+        if len(mask_indices) > 0:
+            filtered_clip = create_subclip(clip, mask_indices)
+
+            filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
 
