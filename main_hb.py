@@ -17,7 +17,7 @@ def crop_video_promise(filepath_original, window, filepath_output):
     command += " --encoder-preset veryfast"
     command += " --audio none"
     command += " --rate 1.5"
-    command += " --stop-at duration:600"
+    command += " --stop-at duration:30"
     return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def expand_ones(arr, N, M):
@@ -34,15 +34,18 @@ def expand_ones(arr, N, M):
     # Find the indices of the zeros in the array
     N = int(N)
     M = int(M)
-    log.info(arr.sum() / arr.size)
-    zero_indices = np.where(arr == 1)[0]
+
+    percent = arr.sum() / arr.size
+    zero_indices = np.where(arr)[0]
 
     # Replace the elements before and after each zero with zeros
     for i in zero_indices:
         start = max(0, i - N)
         end = min(len(arr), i + M + 1)
         arr[start:end] = 1
-    log.info(arr.sum() / arr.size)
+    
+    log.info(f"{percent*100:.2f}% -> {arr.sum() / arr.size * 100:.2f}")
+
     return arr
 
 def create_subclip(clip, indices):
@@ -65,9 +68,8 @@ def create_subclip(clip, indices):
     return subclip
 
 class VideoHighlightProcessor:
-    def __init__(self, folder, generate_inputs=False, input_generation_sampling=50, predict_sampling=20, keep_after=5, keep_before=4):
+    def __init__(self, folder, input_generation_sampling=50, predict_sampling=20, keep_after=5, keep_before=4):
         self.folder = folder
-        self.generate_inputs = generate_inputs
         self.input_generation_sampling = input_generation_sampling
         self.predict_sampling = predict_sampling
         self.keep_after = keep_after
@@ -81,38 +83,63 @@ class VideoHighlightProcessor:
         for filename in os.listdir(self.temp_folder):
             os.remove(os.path.join(self.temp_folder, filename))
 
-        if not self.generate_inputs:
-            # We need to load the model to make prediction if a frame is intresting or not
-            log.info("Loading model...")
-            path = Path('inputs')
-            data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
-            self.learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
-            self.learn = self.learn.load('resnet18')
-            log.info("Model loaded.")
+    def load_model(self):
+        # We need to load the model to make prediction if a frame is intresting or not
+        log.info("Loading model...")
+        path = Path('inputs')
+        data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
+        self.learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
+        self.learn = self.learn.load('resnet18')
+        log.info("Model loaded.")
 
-    def routine(self):
-        for filename in os.listdir(folder):
+    def highlight(self):
+        self.load_model()
+
+        for filename in os.listdir(self.folder):
             if not filename.endswith(".mp4"):
                 continue
 
-            path = os.path.join(folder, filename)
+            path = os.path.join(self.folder, filename)
             log.info(f'Working on {path}.')
             vfc = mp.VideoFileClip(path)
             vfc_size = vfc.size
-            vfc_duration = vfc.duration
             vfc_fps = vfc.fps
             vfc.close()
+            
             cropped_videos = self.crop_video(filename, clip_size=vfc_size)
 
             mask = np.zeros((int(vfc.duration * vfc.fps), len(self.positions)), dtype=np.bool)
             for cropped_video in cropped_videos:
                 preds = self.process(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
                 for timestamp, pred in preds.items():
+                    if pred:
+                        log.info('Found interesting frame.')
                     mask[int(timestamp*vfc_fps)] = pred
 
-            if not self.generate_inputs:
-                vfc = mp.VideoFileClip(path)
-                self.generate_video(vfc, mask, filename)
+            log.info(f"Found {mask.sum()} interesting frames.")
+
+            vfc = mp.VideoFileClip(path)
+            self.generate_video(vfc, mask, filename)
+
+    def generate_inputs(self):
+        for filename in os.listdir(self.folder):
+            if not filename.endswith(".mp4"):
+                continue
+
+            path = os.path.join(self.folder, filename)
+            log.info(f'Working on {path}.')
+            vfc = mp.VideoFileClip(path)
+            vfc_size = vfc.size
+            vfc_fps = vfc.fps
+            vfc.close()
+            
+            cropped_videos = self.crop_video(filename, clip_size=vfc_size)
+        
+            mask = np.zeros((int(vfc.duration * vfc.fps), len(self.positions)), dtype=np.bool)
+            for cropped_video in cropped_videos:
+                preds = self.dump_inputs(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
+                for timestamp, pred in preds.items():
+                    mask[int(timestamp*vfc_fps)] = pred
 
     def crop_video(self, filename, clip_size):
         log.info(f"Cropping {filename}")
@@ -121,8 +148,9 @@ class VideoHighlightProcessor:
         promises = []
         for key, position in self.positions.items():
             filepath_output = os.path.join(self.temp_folder, f"cropped_{key}_{filename}")
-            window = [clip_size[1] - (position[0] + self.window_size[0] // 2), position[0] - self.window_size[0] // 2,
+            window = [position[0] - self.window_size[0] // 2, clip_size[1] - (position[0] + self.window_size[0] // 2),
                     position[1] - self.window_size[1] // 2, clip_size[0] - (position[1] + self.window_size[1] // 2)]
+            log.info(f"Cropping {filename} around {key} with window {window}")
             d = {
                 "key":
                 key,
@@ -146,26 +174,29 @@ class VideoHighlightProcessor:
         log.info(f"Processing {filename} around {key}.")
         preds = {}
         for i, subframe in tqdm(enumerate(clip.iter_frames()), total = int(clip.duration * clip.fps)):
-            pred = []
             subframe = subframe.astype(np.uint8)
-            if not self.generate_inputs:
-                with self.learn.no_bar():
-                    pred_class, pred_idx, outputs = self.learn.predict(subframe)
-                pred.append(pred_class == 'true')
-                if i % 4 == 0:
-                    imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
-            else:
-                imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
-            
-            preds[float(i) / clip.fps] = any(pred)
+            with self.learn.no_bar():
+                pred_class, pred_idx, outputs = self.learn.predict(subframe)
+            if i % 4 == 0:
+                imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
+            if pred_class == 'true':
+                print(pred_class == 'true')
+            preds[float(i) / clip.fps] = pred_class == 'true'
+        
         return preds
+
+    def dump_inputs(self, clip, filename, key):
+        log.info(f"Writing input images of {filename} around {key}.")
+        for i, subframe in tqdm(enumerate(clip.iter_frames()), total = int(clip.duration * clip.fps)):
+            subframe = subframe.astype(np.uint8)
+            imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe.astype(np.uint8))
 
     def generate_video(self, clip, mask, filename):        
         mask = expand_ones(mask, self.keep_before * clip.fps, self.keep_after * clip.fps)
 
         mask_indices = mask.nonzero()[0]
         
-        if len(mask_indices) < 0:
+        if len(mask_indices) == 0:
             log.warning(f"Could not find any interesting frames in {filename}.")
 
             return
@@ -181,7 +212,6 @@ if __name__ == '__main__':
     # if True, generate inputs for the model
     # this needs to be done at least once
     # if False, generate the videos
-    generate_inputs = False
 
     # if in input generation, generate one input every 
     # this number needs to be high because we have to see a variaty of situations
@@ -197,5 +227,5 @@ if __name__ == '__main__':
     keep_after = 5 # sec
     keep_before = 4 # sec
 
-    vp = VideoHighlightProcessor(folder, generate_inputs, input_generation_sampling, predict_sampling, keep_after, keep_before)
-    vp.routine()
+    vp = VideoHighlightProcessor(folder, input_generation_sampling, predict_sampling, keep_after, keep_before)
+    vp.highlight()
