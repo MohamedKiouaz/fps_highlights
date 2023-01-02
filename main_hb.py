@@ -1,6 +1,5 @@
 import os
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
 
 import imageio
 import moviepy.editor as mp
@@ -13,7 +12,8 @@ from loguru import logger as log
 
 
 def crop_video_promise(filepath_original, window, filepath_output):
-    command = f"C:/Users/moham/Downloads/HandBrakeCLI-1.6.0-win-x86_64/HandBrakeCLI.exe -i \"{filepath_original}\" -o \"{filepath_output}\" --crop {':'.join([str(x) for x in window])}"
+    command = "C:/Users/moham/Downloads/HandBrakeCLI-1.6.0-win-x86_64/HandBrakeCLI.exe"
+    command += f" -i \"{filepath_original}\" -o \"{filepath_output}\" --crop {':'.join([str(x) for x in window])}"
     command += " --encoder-preset veryfast"
     command += " --audio none"
     command += " --rate 1.5"
@@ -45,26 +45,6 @@ def expand_ones(arr, N, M):
     log.info(arr.sum() / arr.size)
     return arr
 
-def get_subframe(image, position, subframe_size):
-    """
-    Given an input image and a position, extract a subframe of size subframe_size
-    """
-    rows, cols, _ = image.shape
-
-    frame_rows, frame_cols = subframe_size
-
-    row_min = position[0] - frame_rows // 2
-    col_min = position[1] - frame_cols // 2
-
-    row_min = max(row_min, 0)
-    col_min = max(col_min, 0)
-    if row_min + frame_rows > rows:
-        row_min = rows - frame_rows
-    if col_min + frame_cols > cols:
-        col_min = cols - frame_cols
-
-    return image[row_min:row_min+frame_rows, col_min:col_min+frame_cols]
-
 def create_subclip(clip, indices):
     """
     Given a clip and the indices of the relavant frames, create a clip only with those frames
@@ -92,7 +72,6 @@ class VideoHighlightProcessor:
         self.predict_sampling = predict_sampling
         self.keep_after = keep_after
         self.keep_before = keep_before
-        self.multi_thread = False
         self.window_size = (100, 100)
         self.positions = {'center': (719, 1289), 'teams_left': (88, 2049)}
         
@@ -102,9 +81,6 @@ class VideoHighlightProcessor:
         for filename in os.listdir(self.temp_folder):
             os.remove(os.path.join(self.temp_folder, filename))
 
-        if self.multi_thread:
-            self.executor = ThreadPoolExecutor()
-
         if not self.generate_inputs:
             # We need to load the model to make prediction if a frame is intresting or not
             log.info("Loading model...")
@@ -113,10 +89,6 @@ class VideoHighlightProcessor:
             self.learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
             self.learn = self.learn.load('resnet18')
             log.info("Model loaded.")
-
-    def enable_multi_thread(self):
-        self.multi_thread = True
-        self.executor = ThreadPoolExecutor()
 
     def routine(self):
         for filename in os.listdir(folder):
@@ -173,26 +145,19 @@ class VideoHighlightProcessor:
     def process(self, clip, filename, key):
         log.info(f"Processing {filename} around {key}.")
         preds = {}
-        self.tqdm = tqdm(total = int(clip.duration * clip.fps))
-        for i, subframe in enumerate(clip.iter_frames()):
-            self.tqdm.update(1)
-            
-            if i % self.predict_sampling != 0:
-                continue
-            
+        for i, subframe in tqdm(enumerate(clip.iter_frames()), total = int(clip.duration * clip.fps)):
             pred = []
             subframe = subframe.astype(np.uint8)
             if not self.generate_inputs:
                 with self.learn.no_bar():
                     pred_class, pred_idx, outputs = self.learn.predict(subframe)
                 pred.append(pred_class == 'true')
-                if i % 17 == 0:
+                if i % 4 == 0:
                     imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
             else:
                 imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
             
             preds[float(i) / clip.fps] = any(pred)
-        self.tqdm.close()
         return preds
 
     def generate_video(self, clip, mask, filename):        
@@ -210,10 +175,25 @@ class VideoHighlightProcessor:
         filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
 
 if __name__ == '__main__':
+    # folder where the videos are
     folder = r"D:\Videos\Radeon ReLive\Apex Legends\a"
+
+    # if True, generate inputs for the model
+    # this needs to be done at least once
+    # if False, generate the videos
     generate_inputs = False
-    input_generation_sampling = 50 # if in input generation, generate one input every 
-    predict_sampling = 20 # if in prediction mode, use one frame every
+
+    # if in input generation, generate one input every 
+    # this number needs to be high because we have to see a variaty of situations
+    # many guns, many champions, many maps...
+    input_generation_sampling = 50
+    
+    # if in prediction mode, use one frame every
+    # this number needs to be low because we want to be able to detect the interesting frames
+    # if too high, we will miss some interesting frames
+    predict_sampling = 20
+
+    # keep this number of seconds before and after an interesting frame
     keep_after = 5 # sec
     keep_before = 4 # sec
 
