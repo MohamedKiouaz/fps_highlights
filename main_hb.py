@@ -80,7 +80,7 @@ def create_subclip(clip, indices):
 
     return subclip
 
-class VideoProcessor:
+class VideoHighlightProcessor:
     def __init__(self, folder, generate_inputs=False, input_generation_sampling=50, predict_sampling=20, keep_after=5, keep_before=4):
         self.folder = folder
         self.generate_inputs = generate_inputs
@@ -102,7 +102,11 @@ class VideoProcessor:
             data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
             self.learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
             self.learn = self.learn.load('resnet18')
-        
+            print("Model loaded.")
+
+    def enable_multi_thread(self):
+        self.multi_thread = True
+        self.executor = ThreadPoolExecutor()
 
     def routine(self):
         for filename in os.listdir(folder):
@@ -130,7 +134,7 @@ class VideoProcessor:
         filepath_original = os.path.join(self.folder, filename)
         promises = []
         for key, position in enumerate(self.positions):
-            filepath_output = os.path.join(self.folder, f"cropped_{i}_{filename}")
+            filepath_output = os.path.join(self.folder, f"cropped_{key}_{filename}")
             window = [position[0] - self.window_size[0] // 2, position[0] + self.window_size[0] // 2,
                     position[1] - self.window_size[1] // 2, position[1] + self.window_size[1] // 2]
             d = {
@@ -153,7 +157,9 @@ class VideoProcessor:
         return promises
     
     def shorten(self, clip, filename, key):
-        #use divide and conquer to shorten the video
+        # use divide and conquer to shorten the video
+        # initially the goal was to use multiprocessing to speed up the process, but it turns out
+        # moviepy has a problem with that
         if clip.duration <= self.predict_sampling / clip.fps:
             self.tqdm.update(int(clip.duration * clip.fps))
             return self.process(clip, filename, key)
@@ -174,7 +180,7 @@ class VideoProcessor:
                 with self.learn.no_bar():
                     pred_class, pred_idx, outputs = self.learn.predict(subframe)
                 pred.append(pred_class == 'true')
-                if i%17 == 0:
+                if i % 17 == 0:
                     imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
             else:
                 imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
@@ -201,5 +207,5 @@ if __name__ == '__main__':
     keep_after = 5 # sec
     keep_before = 4 # sec
 
-    vp = VideoProcessor(folder, generate_inputs, input_generation_sampling, predict_sampling, keep_after, keep_before)
+    vp = VideoHighlightProcessor(folder, generate_inputs, input_generation_sampling, predict_sampling, keep_after, keep_before)
     vp.routine()

@@ -73,7 +73,7 @@ def create_subclip(clip, indices):
 
     return subclip
 
-class VideoProcessor:
+class VideoHighlightProcessor:
     def __init__(self, folder, generate_inputs=False, input_generation_sampling=50, predict_sampling=20, keep_after=5, keep_before=4):
         self.folder = folder
         self.generate_inputs = generate_inputs
@@ -172,5 +172,5 @@ if __name__ == '__main__':
     keep_after = 5 # sec
     keep_before = 4 # sec
 
-    vp = VideoProcessor(folder, generate_inputs, input_generation_sampling, predict_sampling, keep_after, keep_before)
+    vp = VideoHighlightProcessor(folder, generate_inputs, input_generation_sampling, predict_sampling, keep_after, keep_before)
     vp.routine()
