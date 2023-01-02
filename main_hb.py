@@ -16,8 +16,7 @@ def crop_video_promise(filepath_original, window, filepath_output):
     command += f" -i \"{filepath_original}\" -o \"{filepath_output}\" --crop {':'.join([str(x) for x in window])}"
     command += " --encoder-preset veryfast"
     command += " --audio none"
-    command += " --rate 1.5"
-    command += " --stop-at duration:30"
+    command += " --rate 2.5"
     return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def expand_ones(arr, N, M):
@@ -36,15 +35,15 @@ def expand_ones(arr, N, M):
     M = int(M)
 
     percent = arr.sum() / arr.size
-    zero_indices = np.where(arr)[0]
+    true_indices = np.where(arr)[0]
 
     # Replace the elements before and after each zero with zeros
-    for i in zero_indices:
+    for i in true_indices:
         start = max(0, i - N)
         end = min(len(arr), i + M + 1)
         arr[start:end] = 1
     
-    log.info(f"{percent*100:.2f}% -> {arr.sum() / arr.size * 100:.2f}")
+    log.info(f"{percent*100:.4f}% -> {arr.sum() / arr.size * 100:.4f}%")
 
     return arr
 
@@ -78,10 +77,15 @@ class VideoHighlightProcessor:
         self.positions = {'center': (719, 1289), 'teams_left': (88, 2049)}
         
         self.temp_folder = 'temp'
-        if not os.path.exists(self.temp_folder):
-            os.mkdir(self.temp_folder)
+        
+        self._init_folders()
+
         for filename in os.listdir(self.temp_folder):
             os.remove(os.path.join(self.temp_folder, filename))
+
+    def _init_folders(self):
+        for folder in [self.folder, self.temp_folder, 'inputs/true', 'inputs/false', 'outputs/true', 'outputs/false', 'videos']:
+            os.mkdirs(folder, exist_ok=True)
 
     def load_model(self):
         # We need to load the model to make prediction if a frame is intresting or not
@@ -108,14 +112,16 @@ class VideoHighlightProcessor:
             
             cropped_videos = self.crop_video(filename, clip_size=vfc_size)
 
-            mask = np.zeros((int(vfc.duration * vfc.fps), len(self.positions)), dtype=np.bool)
+            mask = np.zeros(int(vfc.duration * vfc.fps), dtype=np.bool)
             for cropped_video in cropped_videos:
                 preds = self.process(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
                 for timestamp, pred in preds.items():
+                    mask[int(timestamp*vfc_fps)] = mask[int(timestamp*vfc_fps)] or pred
                     if pred:
-                        log.info('Found interesting frame.')
-                    mask[int(timestamp*vfc_fps)] = pred
+                        log.info(f'Found interesting frame. {int(timestamp*vfc_fps)} {pred}')
+                        log.info(f'{mask[int(timestamp*vfc_fps)]}')
 
+            print(mask)
             log.info(f"Found {mask.sum()} interesting frames.")
 
             vfc = mp.VideoFileClip(path)
@@ -135,11 +141,8 @@ class VideoHighlightProcessor:
             
             cropped_videos = self.crop_video(filename, clip_size=vfc_size)
         
-            mask = np.zeros((int(vfc.duration * vfc.fps), len(self.positions)), dtype=np.bool)
             for cropped_video in cropped_videos:
-                preds = self.dump_inputs(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
-                for timestamp, pred in preds.items():
-                    mask[int(timestamp*vfc_fps)] = pred
+                self.dump_inputs(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
 
     def crop_video(self, filename, clip_size):
         log.info(f"Cropping {filename}")
@@ -179,8 +182,6 @@ class VideoHighlightProcessor:
                 pred_class, pred_idx, outputs = self.learn.predict(subframe)
             if i % 4 == 0:
                 imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
-            if pred_class == 'true':
-                print(pred_class == 'true')
             preds[float(i) / clip.fps] = pred_class == 'true'
         
         return preds
@@ -209,10 +210,6 @@ if __name__ == '__main__':
     # folder where the videos are
     folder = r"D:\Videos\Radeon ReLive\Apex Legends\a"
 
-    # if True, generate inputs for the model
-    # this needs to be done at least once
-    # if False, generate the videos
-
     # if in input generation, generate one input every 
     # this number needs to be high because we have to see a variaty of situations
     # many guns, many champions, many maps...
@@ -228,4 +225,14 @@ if __name__ == '__main__':
     keep_before = 4 # sec
 
     vp = VideoHighlightProcessor(folder, input_generation_sampling, predict_sampling, keep_after, keep_before)
-    vp.highlight()
+    
+    generate_inputs = False
+
+    if generate_inputs:
+        # generate inputs for the model
+        # this needs to be done at least once
+        # you need to sort the inputs into folders
+        vp.generate_inputs()
+    else:
+        # generate the highlights
+        vp.highlight()

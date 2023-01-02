@@ -16,7 +16,7 @@ You can install these packages using pip:
 
 ## Usage
 
-To use the script, modify the following variables at the top of the script:
+To use the script, modify the following variables at the bottom of the script:
 
     `folder`: the path to the directory containing the video files to be filtered
     generate_inputs: set to True to generate inputs for machine learning, False to filter the video using the machine learning model
