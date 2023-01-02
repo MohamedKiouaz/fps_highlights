@@ -9,12 +9,16 @@ from fastai.vision.all import *
 from fastai.vision.data import ImageDataLoaders
 from fastai.vision.learner import vision_learner
 from tqdm import tqdm
+from loguru import logger as log
 
 
 def crop_video_promise(filepath_original, window, filepath_output):
-  command = f"HandBrakeCLI -i {filepath_original} -o {filepath_output} --crop {window[0]}:{window[1]}:{window[2]}:{window[3]}"
-  return subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-
+    command = f"C:/Users/moham/Downloads/HandBrakeCLI-1.6.0-win-x86_64/HandBrakeCLI.exe -i \"{filepath_original}\" -o \"{filepath_output}\" --crop {':'.join([str(x) for x in window])}"
+    command += " --encoder-preset veryfast"
+    command += " --audio none"
+    command += " --rate 1.5"
+    command += " --stop-at duration:600"
+    return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def expand_ones(arr, N, M):
     """
@@ -30,7 +34,7 @@ def expand_ones(arr, N, M):
     # Find the indices of the zeros in the array
     N = int(N)
     M = int(M)
-    print(arr.sum() / arr.size)
+    log.info(arr.sum() / arr.size)
     zero_indices = np.where(arr == 1)[0]
 
     # Replace the elements before and after each zero with zeros
@@ -38,7 +42,7 @@ def expand_ones(arr, N, M):
         start = max(0, i - N)
         end = min(len(arr), i + M + 1)
         arr[start:end] = 1
-    print(arr.sum() / arr.size)
+    log.info(arr.sum() / arr.size)
     return arr
 
 def get_subframe(image, position, subframe_size):
@@ -91,18 +95,24 @@ class VideoHighlightProcessor:
         self.multi_thread = False
         self.window_size = (100, 100)
         self.positions = {'center': (719, 1289), 'teams_left': (88, 2049)}
+        
+        self.temp_folder = 'temp'
+        if not os.path.exists(self.temp_folder):
+            os.mkdir(self.temp_folder)
+        for filename in os.listdir(self.temp_folder):
+            os.remove(os.path.join(self.temp_folder, filename))
 
         if self.multi_thread:
             self.executor = ThreadPoolExecutor()
 
         if not self.generate_inputs:
             # We need to load the model to make prediction if a frame is intresting or not
-            print("Loading model...")
+            log.info("Loading model...")
             path = Path('inputs')
             data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
             self.learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
             self.learn = self.learn.load('resnet18')
-            print("Model loaded.")
+            log.info("Model loaded.")
 
     def enable_multi_thread(self):
         self.multi_thread = True
@@ -114,29 +124,33 @@ class VideoHighlightProcessor:
                 continue
 
             path = os.path.join(folder, filename)
-            print(f'Working on {path}.')
+            log.info(f'Working on {path}.')
             vfc = mp.VideoFileClip(path)
-            self.tqdm = tqdm()
-            self.tqdm.total = int(vfc.duration * vfc.fps)
-            
-            cropped_videos = self.crop_video(filename)
+            vfc_size = vfc.size
+            vfc_duration = vfc.duration
+            vfc_fps = vfc.fps
+            vfc.close()
+            cropped_videos = self.crop_video(filename, clip_size=vfc_size)
 
             mask = np.zeros((int(vfc.duration * vfc.fps), len(self.positions)), dtype=np.bool)
             for cropped_video in cropped_videos:
-                mask |= self.shorten(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
+                preds = self.process(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
+                for timestamp, pred in preds.items():
+                    mask[int(timestamp*vfc_fps)] = pred
 
             if not self.generate_inputs:
+                vfc = mp.VideoFileClip(path)
                 self.generate_video(vfc, mask, filename)
 
-    def crop_video(self, filename):
-        print(f"Cropping {filename}")
+    def crop_video(self, filename, clip_size):
+        log.info(f"Cropping {filename}")
 
         filepath_original = os.path.join(self.folder, filename)
         promises = []
-        for key, position in enumerate(self.positions):
-            filepath_output = os.path.join(self.folder, f"cropped_{key}_{filename}")
-            window = [position[0] - self.window_size[0] // 2, position[0] + self.window_size[0] // 2,
-                    position[1] - self.window_size[1] // 2, position[1] + self.window_size[1] // 2]
+        for key, position in self.positions.items():
+            filepath_output = os.path.join(self.temp_folder, f"cropped_{key}_{filename}")
+            window = [clip_size[1] - (position[0] + self.window_size[0] // 2), position[0] - self.window_size[0] // 2,
+                    position[1] - self.window_size[1] // 2, clip_size[0] - (position[1] + self.window_size[1] // 2)]
             d = {
                 "key":
                 key,
@@ -151,29 +165,21 @@ class VideoHighlightProcessor:
             promises.append(d)
 
         for d in promises:
-            d["promise"].wait()
-            print(f"Finished cropping {d['filename']} around {d['key']}")
-        
+            output, error = d['promise'].communicate()
+            log.info(f"Finished cropping {filename} around {d['key']}")
+
         return promises
     
-    def shorten(self, clip, filename, key):
-        # use divide and conquer to shorten the video
-        # initially the goal was to use multiprocessing to speed up the process, but it turns out
-        # moviepy has a problem with that
-        if clip.duration <= self.predict_sampling / clip.fps:
-            self.tqdm.update(int(clip.duration * clip.fps))
-            return self.process(clip, filename, key)
-        
-        mid = clip.duration / 2
-
-        m1 = self.shorten(clip.subclip(t_start=0, t_end=mid), filename, key)
-        m2 = self.shorten(clip.subclip(t_start=mid, t_end=clip.duration), filename, key)
-
-        return np.concatenate((m1, m2))
-
     def process(self, clip, filename, key):
-        mask = np.zeros(int(clip.duration * clip.fps))
+        log.info(f"Processing {filename} around {key}.")
+        preds = {}
+        self.tqdm = tqdm(total = int(clip.duration * clip.fps))
         for i, subframe in enumerate(clip.iter_frames()):
+            self.tqdm.update(1)
+            
+            if i % self.predict_sampling != 0:
+                continue
+            
             pred = []
             subframe = subframe.astype(np.uint8)
             if not self.generate_inputs:
@@ -184,20 +190,24 @@ class VideoHighlightProcessor:
                     imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
             else:
                 imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
-
-            mask[i] = any(pred)
-        
-        return mask
+            
+            preds[float(i) / clip.fps] = any(pred)
+        self.tqdm.close()
+        return preds
 
     def generate_video(self, clip, mask, filename):        
         mask = expand_ones(mask, self.keep_before * clip.fps, self.keep_after * clip.fps)
 
         mask_indices = mask.nonzero()[0]
         
-        if len(mask_indices) > 0:
-            filtered_clip = create_subclip(clip, mask_indices)
+        if len(mask_indices) < 0:
+            log.warning(f"Could not find any interesting frames in {filename}.")
 
-            filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
+            return
+        
+        filtered_clip = create_subclip(clip, mask_indices)
+
+        filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
 
 if __name__ == '__main__':
     folder = r"D:\Videos\Radeon ReLive\Apex Legends\a"
