@@ -85,7 +85,7 @@ class VideoHighlightProcessor:
 
     def _init_folders(self):
         for folder in [self.folder, self.temp_folder, 'inputs/true', 'inputs/false', 'outputs/true', 'outputs/false', 'videos']:
-            os.mkdirs(folder, exist_ok=True)
+            os.makedirs(folder, exist_ok=True)
 
     def load_model(self):
         # We need to load the model to make prediction if a frame is intresting or not
@@ -116,12 +116,9 @@ class VideoHighlightProcessor:
             for cropped_video in cropped_videos:
                 preds = self.process(mp.VideoFileClip(cropped_video['filepath_output']), cropped_video['filepath_output'], cropped_video['key'])
                 for timestamp, pred in preds.items():
-                    mask[int(timestamp*vfc_fps)] = mask[int(timestamp*vfc_fps)] or pred
-                    if pred:
-                        log.info(f'Found interesting frame. {int(timestamp*vfc_fps)} {pred}')
-                        log.info(f'{mask[int(timestamp*vfc_fps)]}')
+                    ind = min(int(timestamp*vfc_fps), mask.size-1)
+                    mask[ind] = mask[ind] or pred
 
-            print(mask)
             log.info(f"Found {mask.sum()} interesting frames.")
 
             vfc = mp.VideoFileClip(path)
