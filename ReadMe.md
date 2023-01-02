@@ -7,6 +7,9 @@ This script is designed to filter out interesting frames in an Apex Legends vide
 This script requires the following Python packages:
 - moviepy
 - fastai
+- numpy
+- loguru
+- tqdm
 
 You can install these packages using pip:
 `pip install -r requirements.txt`
