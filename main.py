@@ -128,4 +128,3 @@ for filename in os.listdir(folder):
             filtered_clip = create_subclip(clip, mask_indices)
 
             filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
-
