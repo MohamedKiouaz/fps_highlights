@@ -84,7 +84,9 @@ for filename in os.listdir(folder):
 
     path = os.path.join(folder, filename)
     print(f'Working on {path}.')
-    clip = mp.VideoFileClip(path)
+    import cv2
+
+    clip = cv2.VideoCapture(path)
 
     if not generate_inputs:
         # We need to load the model to make prediction if a frame is intresting or not
@@ -93,17 +95,24 @@ for filename in os.listdir(folder):
         learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
         learn = learn.load('resnet18')
     
-    mask = np.zeros(int(clip.duration * clip.fps))
-    subframes = {}
-    for i, frame in tqdm(enumerate(clip.iter_frames()), total=int(clip.duration * clip.fps)):
-        if generate_inputs and i % input_generation_sampling != 0:
-            continue
-        
-        if not generate_inputs and i % predict_sampling != 0:
-            continue
 
-        subframes[i] = {'center': get_subframe(frame, (719, 1289), (100, 100)),
-                'teamsleft': get_subframe(frame, (88, 2049), (100, 100))}
+    n_frames = int(clip.get(cv2.CAP_PROP_FRAME_COUNT))
+    clip.set(cv2.CAP_PROP_POS_FRAMES, input_generation_sampling if generate_inputs else predict_sampling)
+    
+    subframes = {}
+    with tqdm(total=n_frames, desc="Processing") as pbar:
+        while True:
+            ret, frame = clip.read()
+            if not ret:
+                break
+                
+            frame_num = clip.get(cv2.CAP_PROP_POS_FRAMES)
+            pbar.n = frame_num
+            pbar.update()
+            if frame_num > 1000:
+                break
+            subframes[frame_num] = {'center': get_subframe(frame, (719, 1289), (100, 100)),
+                    'teamsleft': get_subframe(frame, (88, 2049), (100, 100))}
 
     for i, subf in tqdm(subframes.items()):
         pred = []
@@ -117,7 +126,7 @@ for filename in os.listdir(folder):
             else:
                 imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
 
-        mask[i] = any(pred)
+        mask.append(any(pred))
 
     if not generate_inputs:
         mask = expand_ones(mask, keep_before * clip.fps, keep_after * clip.fps)
