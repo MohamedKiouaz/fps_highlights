@@ -95,7 +95,11 @@ for filename in os.listdir(folder):
     
     mask = np.zeros(int(clip.duration * clip.fps))
     subframes = {}
-    for i, frame in tqdm(enumerate(clip.iter_frames()), total=int(clip.duration * clip.fps)):
+    times = np.arange(0, clip.duration, 1.0/clip.fps)
+    times = np.array([x for i, x in enumerate(times) if i % predict_sampling == 0])
+
+    for i, t in tqdm(enumerate(times), total = times.size):
+        frame = clip.get_frame(t)
         if generate_inputs and i % input_generation_sampling != 0:
             continue
         
@@ -104,6 +108,7 @@ for filename in os.listdir(folder):
 
         subframes[i] = {'center': get_subframe(frame, (719, 1289), (100, 100)),
                 'teamsleft': get_subframe(frame, (88, 2049), (100, 100))}
+
 
     for i, subf in tqdm(subframes.items()):
         pred = []
