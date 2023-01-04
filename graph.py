@@ -46,6 +46,7 @@ def plot_n_images(images, pred, true, path):
     fig.tight_layout()
     
     fig.savefig(path)
+    print(f'Saved {path}')
 
 
 if __name__ == '__main__':
@@ -57,19 +58,43 @@ if __name__ == '__main__':
 
     save_path = Path('graphs')
     save_path.mkdir(exist_ok=True)
-
+    
+    print(f'Predicting {len(data.valid_ds)} images...')
     y_test = np.array([img[1].numpy() for img in data.valid_ds])
     y = np.array([learn.predict(img[0])[2][1].numpy() for img in data.valid_ds])
     imgs = [np.asarray(img[0]) for img in data.valid_ds]
-    
+
+    print('Plotting ROC curve...')    
     # Plot ROC curve
     plot_roc_curve(y_test, y, save_path / 'roc.png')
 
+    print('Plotting most uncertain images...')
     # Plot most uncertain images
-    certainties = 1 - abs(0.5 - y)
+    certainties =  abs(0.5 - y)
     sorted_idxs = np.argsort(certainties)[:25]
     sorted_images = [imgs[i] for i in sorted_idxs]
-    sorted_predictions = [certainties[i] for i in sorted_idxs]
+    sorted_predictions = [y[i] for i in sorted_idxs]
     sorted_y_test = [y_test[i] for i in sorted_idxs]
 
     plot_n_images(sorted_images, sorted_predictions, sorted_y_test, save_path / 'most_uncertain.png')
+
+    sorted_idxs = np.argsort(certainties)
+    sorted_images = [imgs[i] for i in sorted_idxs]
+    sorted_predictions = [y[i] for i in sorted_idxs]
+    sorted_y_test = [y_test[i] for i in sorted_idxs]
+
+    # indexes of true values
+    false_idxs = np.where(np.array(sorted_y_test) == 0)[0]
+    false_images = [sorted_images[i] for i in false_idxs][:25]
+    false_predictions = [y[i] for i in false_idxs][:25]
+    false_y_test = [sorted_y_test[i] for i in false_idxs][:25]
+
+    plot_n_images(false_images, false_predictions, false_y_test, save_path / 'most_uncertain_false.png')
+
+    # indexes of true values
+    true_idxs = np.where(np.array(sorted_y_test) == 1)[0]
+    true_images = [sorted_images[i] for i in true_idxs][:25]
+    true_predictions = [y[i] for i in true_idxs][:25]
+    true_y_test = [sorted_y_test[i] for i in true_idxs][:25]
+
+    plot_n_images(true_images, true_predictions, true_y_test, save_path / 'most_uncertain_true.png')
