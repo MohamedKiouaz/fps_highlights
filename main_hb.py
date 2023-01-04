@@ -84,14 +84,14 @@ class VideoHighlightProcessor:
             os.remove(os.path.join(self.temp_folder, filename))
 
     def _init_folders(self):
-        for folder in [self.folder, self.temp_folder, 'inputs/true', 'inputs/false', 'outputs/true', 'outputs/false', 'videos']:
+        for folder in [self.folder, self.temp_folder, 'inputs/train/true', 'inputs/train/false', 'inputs/valid/true', 'inputs/valid/false', 'outputs/true', 'outputs/false', 'videos']:
             os.makedirs(folder, exist_ok=True)
 
     def load_model(self):
         # We need to load the model to make prediction if a frame is intresting or not
         log.info("Loading model...")
         path = Path('inputs')
-        data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
+        data = ImageDataLoaders.from_folder(path, train='train', valid='valid')
         self.learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
         self.learn = self.learn.load('resnet18')
         log.info("Model loaded.")

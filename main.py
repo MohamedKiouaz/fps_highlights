@@ -71,65 +71,80 @@ def create_subclip(clip, indices):
 
     return subclip
 
-folder = r"D:\Videos\Radeon ReLive\Apex Legends\a"
-generate_inputs = False
-input_generation_sampling = 50 # if in input generation, generate one input every 
-predict_sampling = 20 # if in prediction mode, use one frame every
-keep_after = 5 # sec
-keep_before = 4 # sec
+if __name__ == '__main__':
+    generate_inputs = False
 
-for filename in os.listdir(folder):
-    if not filename.endswith(".mp4"):
-        continue
+    # folder where the videos are
+    folder = r"D:\Videos\Radeon ReLive\Apex Legends\a"
 
-    path = os.path.join(folder, filename)
-    print(f'Working on {path}.')
-    clip = mp.VideoFileClip(path)
+    # if in input generation, generate one input every 
+    # this number needs to be high because we have to see a variaty of situations
+    # many guns, many champions, many maps...
+    input_generation_sampling = 50
 
-    if not generate_inputs:
-        # We need to load the model to make prediction if a frame is intresting or not
-        path = Path('inputs')
-        data = ImageDataLoaders.from_folder(path, train='.', valid_pct=0.2)
-        learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
-        learn = learn.load('resnet18')
+    # if in prediction mode, use one frame every
+    # this number needs to be low because we want to be able to detect the interesting frames
+    # if too high, we will miss some interesting frames
+    predict_sampling = 5
+
+    # keep this number of seconds before and after an interesting frame
+    keep_after = 5 # sec
+    keep_before = 4 # sec
     
-    mask = np.zeros(int(clip.duration * clip.fps))
-    subframes = {}
-    times = np.arange(0, clip.duration, 1.0/clip.fps)
-    times = np.array([x for i, x in enumerate(times) if i % predict_sampling == 0])
-
-    for i, t in tqdm(enumerate(times), total = times.size):
-        frame = clip.get_frame(t)
-        if generate_inputs and i % input_generation_sampling != 0:
-            continue
-        
-        if not generate_inputs and i % predict_sampling != 0:
-            continue
-
-        subframes[i] = {'center': get_subframe(frame, (719, 1289), (100, 100)),
-                'teamsleft': get_subframe(frame, (88, 2049), (100, 100))}
-
-
-    for i, subf in tqdm(subframes.items()):
-        pred = []
-        for key, subframe in subf.items():
-            subframe = subframe.astype(np.uint8)
-            if not generate_inputs:
-                pred_class, pred_idx, outputs = learn.predict(subframe)
-                pred.append(pred_class == 'true')
-                if i%17 == 0:
-                    imageio.imwrite(f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
-            else:
-                imageio.imwrite(f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png", subframe)
-
-        mask[i] = any(pred)
-
     if not generate_inputs:
-        mask = expand_ones(mask, keep_before * clip.fps, keep_after * clip.fps)
+            # We need to load the model to make prediction if a frame is interesting or not
+            path = Path('inputs')
+            data = ImageDataLoaders.from_folder(path, train='train', valid='valid')
+            learn = vision_learner(data, models.resnet18, bn_final=True, model_dir="models")
+            learn = learn.load('resnet18')
 
-        mask_indices = mask.nonzero()[0]
-        
-        if len(mask_indices) > 0:
-            filtered_clip = create_subclip(clip, mask_indices)
+    for filename in os.listdir(folder):
+        if not filename.endswith(".mp4"):
+            continue
 
-            filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
+        path = os.path.join(folder, filename)
+        print(f'Working on {path}.')
+        clip = mp.VideoFileClip(path)
+
+        times = np.arange(0, clip.duration, 1.0/clip.fps)
+
+        subframes = {}
+        for i, t in tqdm(enumerate(times), total = times.size):
+            if i % predict_sampling != 0:
+                continue
+            try:
+                frame = clip.get_frame(t)
+                subframes[i] = {'center': get_subframe(frame, (719, 1289), (100, 100)),
+                        'teamsleft': get_subframe(frame, (88, 2049), (100, 100))}
+            except Exception:
+                continue
+
+        mask = np.zeros(int(clip.duration * clip.fps))
+        for i, subf in tqdm(subframes.items()):
+            pred = []
+            for key, subframe in subf.items():
+                subframe = subframe.astype(np.uint8)
+                if not generate_inputs:
+                    with learn.no_bar():
+                        pred_class, pred_idx, outputs = learn.predict(subframe)
+                    pred.append(pred_class == 'true')
+                    if i%5 == 0:
+                        img_path = f"outputs/{pred_class}/{key}_{filename[-20:]}_{i/60:.2f}.png"
+                        if not os.path.exists(img_path):
+                            imageio.imwrite(img_path, subframe)
+                else:
+                    img_path = f"inputs/{key}_{filename[-20:]}_{i/60:.2f}.png"
+                    if not os.path.exists(img_path):
+                        imageio.imwrite(img_path, subframe)
+
+            mask[i] = any(pred)
+
+        if not generate_inputs:
+            mask = expand_ones(mask, keep_before * clip.fps, keep_after * clip.fps)
+
+            mask_indices = mask.nonzero()[0]
+
+            if len(mask_indices) > 0:
+                filtered_clip = create_subclip(clip, mask_indices)
+
+                filtered_clip.write_videofile(f"videos/{filename[:-4]}_shortened.mp4")
