@@ -22,7 +22,7 @@ if __name__ == '__main__':
     
     #learn.load('model')
 
-    for _ in range(epochs):
-        print(learn.fit(1))
+    for _ in range(epochs//5):
+        learn.fit(5)
 
         learn.save('resnet18')
