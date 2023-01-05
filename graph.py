@@ -7,7 +7,6 @@ from fastai.vision.data import ImageDataLoaders
 from fastai.vision.learner import vision_learner
 from fastai.vision.models import resnet18
 from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
 
 
 def plot_roc_curve(y_test, y, path):
@@ -62,6 +61,7 @@ if __name__ == '__main__':
     print(f'Predicting {len(data.valid_ds)} images...')
     y_test = np.array([img[1].numpy() for img in data.valid_ds])
     y = np.array([learn.predict(img[0])[2][1].numpy() for img in data.valid_ds])
+    print(y)
     imgs = [np.asarray(img[0]) for img in data.valid_ds]
 
     print('Plotting ROC curve...')    
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     # indexes of true values
     false_idxs = np.where(np.array(sorted_y_test) == 0)[0]
     false_images = [sorted_images[i] for i in false_idxs][:25]
-    false_predictions = [y[i] for i in false_idxs][:25]
+    false_predictions = [sorted_predictions[i] for i in false_idxs][:25]
     false_y_test = [sorted_y_test[i] for i in false_idxs][:25]
 
     plot_n_images(false_images, false_predictions, false_y_test, save_path / 'most_uncertain_false.png')
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     # indexes of true values
     true_idxs = np.where(np.array(sorted_y_test) == 1)[0]
     true_images = [sorted_images[i] for i in true_idxs][:25]
-    true_predictions = [y[i] for i in true_idxs][:25]
+    true_predictions = [sorted_predictions[i] for i in true_idxs][:25]
     true_y_test = [sorted_y_test[i] for i in true_idxs][:25]
 
     plot_n_images(true_images, true_predictions, true_y_test, save_path / 'most_uncertain_true.png')
