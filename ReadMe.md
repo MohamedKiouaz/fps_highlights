@@ -85,3 +85,11 @@ If in doubt, remove the image from the dataset, you can always add more images l
 ![Not interesting image 4](images/not_interesting4.png)
 ![Not interesting image 5](images/not_interesting5.png)
 ![Not interesting image 6](images/not_interesting6.png)
+
+### Can I use your dataset?
+
+My dataset is not public for now but it will be in a near future. I'm currently working on a way to make it available to everyone.
+
+That being said, I game in French, high settings, 4K and record at 60fps.
+This means that the images in my dataset are *probably* not compatible with your game settings.
+You will need to supplement the dataset with your own images.
