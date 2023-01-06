@@ -1,0 +1,97 @@
+Sequential (Input shape: 64 x 3 x 100 x 100)
+============================================================================
+Layer (type)         Output Shape         Param #    Trainable 
+============================================================================
+                     64 x 64 x 50 x 50   
+Conv2d                                    9408       False     
+BatchNorm2d                               128        True      
+ReLU                                                           
+____________________________________________________________________________
+                     64 x 64 x 25 x 25   
+MaxPool2d                                                      
+Conv2d                                    36864      False     
+BatchNorm2d                               128        True      
+ReLU                                                           
+Conv2d                                    36864      False     
+BatchNorm2d                               128        True      
+Conv2d                                    36864      False     
+BatchNorm2d                               128        True      
+ReLU                                                           
+Conv2d                                    36864      False     
+BatchNorm2d                               128        True      
+____________________________________________________________________________
+                     64 x 128 x 13 x 13  
+Conv2d                                    73728      False     
+BatchNorm2d                               256        True      
+ReLU                                                           
+Conv2d                                    147456     False     
+BatchNorm2d                               256        True      
+Conv2d                                    8192       False     
+BatchNorm2d                               256        True      
+Conv2d                                    147456     False     
+BatchNorm2d                               256        True      
+ReLU                                                           
+Conv2d                                    147456     False     
+BatchNorm2d                               256        True      
+____________________________________________________________________________
+                     64 x 256 x 7 x 7    
+Conv2d                                    294912     False     
+BatchNorm2d                               512        True      
+ReLU                                                           
+Conv2d                                    589824     False     
+BatchNorm2d                               512        True      
+Conv2d                                    32768      False     
+BatchNorm2d                               512        True      
+Conv2d                                    589824     False     
+BatchNorm2d                               512        True      
+ReLU                                                           
+Conv2d                                    589824     False     
+BatchNorm2d                               512        True      
+____________________________________________________________________________
+                     64 x 512 x 4 x 4    
+Conv2d                                    1179648    False     
+BatchNorm2d                               1024       True      
+ReLU                                                           
+Conv2d                                    2359296    False     
+BatchNorm2d                               1024       True      
+Conv2d                                    131072     False     
+BatchNorm2d                               1024       True      
+Conv2d                                    2359296    False     
+BatchNorm2d                               1024       True      
+ReLU                                                           
+Conv2d                                    2359296    False     
+BatchNorm2d                               1024       True      
+____________________________________________________________________________
+                     64 x 512 x 1 x 1    
+AdaptiveAvgPool2d                                              
+AdaptiveMaxPool2d                                              
+____________________________________________________________________________
+                     64 x 1024           
+Flatten                                                        
+BatchNorm1d                               2048       True      
+Dropout                                                        
+____________________________________________________________________________
+                     64 x 512            
+Linear                                    524288     True      
+ReLU                                                           
+BatchNorm1d                               1024       True      
+Dropout                                                        
+____________________________________________________________________________
+                     64 x 2              
+Linear                                    1024       True      
+BatchNorm1d                               4          True      
+____________________________________________________________________________
+
+Total params: 11,704,900
+Total trainable params: 537,988
+Total non-trainable params: 11,166,912
+
+Optimizer used: <function Adam at 0x000002156C1955E0>
+Loss function: FlattenedLoss of CrossEntropyLoss()
+
+Model frozen up to parameter group #2
+
+Callbacks:
+  - TrainEvalCallback
+  - CastToTensor
+  - Recorder

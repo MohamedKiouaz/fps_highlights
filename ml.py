@@ -18,12 +18,16 @@ if __name__ == '__main__':
 
     input_shape = data.one_batch()[0].shape[1:]
     learn = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy,RocAucBinary()])
-    print(learn.summary())
+    
+    learn.load('resnet18')
+
+    with open('inputs/models/summary.txt', 'w') as f:
+        f.write(learn.summary())
+
     learn.validate()
-    #print validation set accuracy
     print(learn.validate())
 
-    learn.load('resnet18')
+    learn.show_results()
 
     for _ in range(epochs//5):
         learn.fit(5)
