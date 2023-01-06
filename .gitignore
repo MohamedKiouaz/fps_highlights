@@ -1,6 +1,8 @@
 env/
 *.mp4
-*.png
+inputs/**/*.png
+outputs/**/*.png
+graphs
 *.pth
 
 # Byte-compiled / optimized / DLL files
