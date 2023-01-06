@@ -10,6 +10,8 @@ from loguru import logger as log
 from sklearn.metrics import auc, roc_curve
 from tqdm import tqdm
 
+from ml import create_model
+
 
 def plot_roc_curve(y_test, y, path):
     # Compute ROC curve and ROC area for each class
@@ -35,7 +37,7 @@ def plot_n_images(images, pred, true, path):
     n_rows = int(np.sqrt(n_images))
     n_cols = int(np.sqrt(n_images))
 
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(1.5*n_rows, 1.5*n_cols))
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(2.5*n_rows, 2.5*n_cols))
 
     for i, ax in enumerate(axs.flat):
         if i > len(axs.flat):
@@ -70,18 +72,14 @@ def plot_n_images_by_idxs(images, pred, true, path, idxs):
 
 
 if __name__ == '__main__':
-    path = Path('inputs')
-    data = ImageDataLoaders.from_folder(path, train='train', valid='valid')
-
-    learn = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy])
-    learn.load("resnet18")
+    model, data = create_model()
 
     save_path = Path('graphs')
     save_path.mkdir(exist_ok=True)
 
     log.info(f'Predicting {len(data.valid_ds)} images...')
     y_test = np.array([img[1].numpy() for img in data.valid_ds])
-    y = np.array([learn.predict(img[0])[2][1].numpy() for img in tqdm(data.valid_ds)])
+    y = np.array([model.predict(img[0])[2][1].numpy() for img in tqdm(data.valid_ds)])
     imgs = [np.asarray(img[0]) for img in data.valid_ds]
 
     sorted_idxs = np.argsort(y_test)

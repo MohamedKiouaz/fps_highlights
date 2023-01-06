@@ -6,21 +6,30 @@ from fastai.vision.models import resnet18
 from fastai.interpret import Interpretation
 from loguru import logger as log
 
-if __name__ == '__main__':
+def create_model():
     path = Path('inputs')
+
+    log.info("Loading data.")
+    data = ImageDataLoaders.from_folder(path, train='train', valid='valid')
+    
+    log.info("Creating Model.")
+    model = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy,RocAucBinary()])
+
+    log.info("Loading weights.")
+    model = model.load('resnet18')
+
+    log.info("Done.")
+    return model, data
+
+
+if __name__ == '__main__':
     epochs = 30
 
-    data = ImageDataLoaders.from_folder(path, train='train', valid='valid')
-    log.info(f'training set: {len(data.train_ds)}')
-    log.info(f'validation set: {len(data.valid_ds)}')
-
-    log.info("Creating Model.")
-    input_shape = data.one_batch()[0].shape[1:]
-    learn = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy,RocAucBinary()])
+    learn, data = create_model()
     
-    log.info("Loading weights.")
-    learn.load('resnet18')
-
+    log.info(f'Training set: {len(data.train_ds)}')
+    log.info(f'Validation set: {len(data.valid_ds)}')
+    
     log.info("Creating model summary file.")
     with open('inputs/models/summary.txt', 'w') as f:
         f.write(learn.summary())
