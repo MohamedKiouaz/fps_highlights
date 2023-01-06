@@ -58,7 +58,9 @@ Make sure to have diverse images in your dataset:
 
 It looks like it will take forever to sort the images, but it's actually pretty quick. You can sort 100 images per minutes if you use drag and drop. The images will be shown in a chronological order, so there is a logic to where you need to look.
 
-Make sure that your dataset is of *good quality*. Any error in the sorting will impact heavely on the model. If in doubt, you can always ask for help on the [Discord server](https://discord.gg/8Z7Y4Z).
+Make sure that your dataset is of *good quality*.
+Any error in the sorting will impact heavely on the model.
+If in doubt, remove the image from the dataset, you can always add more images later.
 
 ### Examples of interesting images
 
