@@ -1,12 +1,12 @@
 # Apex Legends Filtering Script
 
-This script is designed to filter out interesting frames in an Apex Legends video record and save them to a new mp4 file. Interesting frames are defined as those where the player is dealing damage or near the champion. The interesting frames and the ones immediately before or after them are written to the filtered clip.
+Are you looking to create a highlights reel of your *best moments* in Apex Legends? Look no further! With this script, you can easily filter through your gameplay footage and extract only the most action-packed and exciting moments. Simply gather and label a dataset of interesting and not interesting frames, train a machine learning model, and let the script do the rest. The resulting video clip will feature all the high-stakes battles and triumphant victories you want to remember, without any of the dull downtime in between. Whether you're a seasoned pro or a newcomer to the game, this script is a must-have tool for any Apex Legends fan looking to relive their greatest moments.
 
 ## Fast Start
 - Install Python
 - Install the dependencies
 - In `main.py`, set `generate_inputs=True`. This will generate the inputs for the machine learning model.
-- Sort the inputs in the `inputs` folder into 2 folders: `true` and `false`. The `true` folder contains the interesting frames, and the `false` folder contains the not interesting frames. You need to get at least 2k images in total.
+- Sort the inputs in the `inputs` folder into 2 folders: `true` and `false`. The `true` folder contains the interesting frames, and the `false` folder contains the not interesting frames. You need to get at least 2k images in total. 
 - Train the machine learning model using `ml.py`. This should not take too long.
 - In `main.py`, set `generate_inputs=False`. This will use the machine learning model to filter the video.
 - In `main.py`, set the `folder` variable to the path to the directory containing the video files to be filtered.
@@ -54,7 +54,11 @@ Make sure to have diverse images in your dataset:
 - different backgrounds: sky, buildings, explosions, etc.
 - different weapons: snipers, shotguns, pistols, etc.
 - different champions and their abilities
-- if you choose to include ramaining teams counter, you need to have all of them (the 19).
+- if you choose to include the remaining teams counter, you need to have all of them (the 19).
+
+It looks like it will take forever to sort the images, but it's actually pretty quick. You can sort 100 images per minutes if you use drag and drop. The images will be shown in a chronological order, so there is a logic to where you need to look.
+
+Make sure that your dataset is of *good quality*. Any error in the sorting will impact heavely on the model. If in doubt, you can always ask for help on the [Discord server](https://discord.gg/8Z7Y4Z).
 
 ### Examples of interesting images
 
