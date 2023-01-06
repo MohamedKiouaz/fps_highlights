@@ -1,6 +1,15 @@
-# Apex Legends Filtering Script
+# Apex Legends Highlights Generator
 
-Are you looking to create a highlights reel of your *best moments* in Apex Legends? Look no further! With this script, you can easily filter through your gameplay footage and extract only the most action-packed and exciting moments. Simply gather and label a dataset of interesting and not interesting frames, train a machine learning model, and let the script do the rest. The resulting video clip will feature all the high-stakes battles and triumphant victories you want to remember, without any of the dull downtime in between. Whether you're a seasoned pro or a newcomer to the game, this script is a must-have tool for any Apex Legends fan looking to relive their greatest moments.
+Are you looking to create a highlights reel of your *best moments* in Apex Legends? Look no further! With this script, you can easily filter through your gameplay footage and extract only the most action-packed and exciting moments. Simply gather and label a dataset of interesting and not interesting frames, train a machine learning model, and let the script do the rest. The resulting video clip will feature all the *high-stakes battles* and *triumphant victories* you want to remember, without any of the dull downtime in between. Whether you're a seasoned pro or a newcomer to the game, this script is a must-have tool for any Apex Legends fan looking to relive their greatest moments.
+
+## Features
+
+- Automatically filters through gameplay footage and extracts only the most exciting moments
+- Uses a machine learning model to classify frames as interesting or not
+- Can be used to filter through any video file, not just Apex Legends gameplay footage (provided you create your own dataset)
+- Can be used to filter through multiple video files at once
+- Decide how many seconds of footage to include before and after each interesting frame
+- Lightweight and easy to use
 
 ## Fast Start
 - Install Python
@@ -19,16 +28,7 @@ Use the following command to install the dependencies:
 
 ## Usage
 
-To use the script, modify the following variables at the bottom of the script:
-
-- `folder`: the path to the directory containing the video files to be filtered
-- `generate_inputs`: set to True to generate inputs for machine learning, False to filter the video using the machine learning model
-- `input_generation_sampling`: if in input generation mode, this variable determines the frequency at which inputs are generated (one input every input_generation_sampling frames)
-- `predict_sampling`: if in prediction mode, this variable determines the frequency at which frames are predicted (one prediction every predict_sampling frames). It seems like hit markers are visible for 15 or so frames. You will probably want to set this variable to less.
-- `keep_after`: the number of seconds to keep after an interesting frame
-- `keep_before`: the number of seconds to keep before an interesting frame
-
-Once the variables are set, run the script using the following command:
+Run the script using the following command:
 
 `python main.py`
 
@@ -36,7 +36,11 @@ The script will process each mp4 file in the specified directory and save the fi
 
 ## Machine Learning
 
-The machine learning aspect of the script is handled in the `ml.py` file. This file contains the code for training and evaluating the machine learning model used to classify the frames as interesting or not. The specific implementation details of the machine learning model are not provided in this script.
+The machine learning aspect of the script is handled in the `ml.py` file.
+
+This file contains the code for training and evaluating the machine learning model used to classify the frames as interesting or not.
+
+The specific implementation details of the machine learning model are not provided in this script.
 
 ## Dataset
 
@@ -56,7 +60,9 @@ Make sure to have diverse images in your dataset:
 - different champions and their abilities
 - if you choose to include the remaining teams counter, you need to have all of them (the 19).
 
-It looks like it will take forever to sort the images, but it's actually pretty quick. You can sort 100 images per minutes if you use drag and drop. The images will be shown in a chronological order, so there is a logic to where you need to look.
+It looks like it will take forever to sort the images, but it's actually pretty quick. 
+You can sort 100 images per minutes if you use drag and drop.
+The images will be shown in a chronological order, so there is a logic to where you need to look.
 
 Make sure that your dataset is of *good quality*.
 Any error in the sorting will impact heavely on the model.
