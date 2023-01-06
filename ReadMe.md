@@ -2,16 +2,18 @@
 
 This script is designed to filter out interesting frames in an Apex Legends video record and save them to a new mp4 file. Interesting frames are defined as those where the player is dealing damage or near the champion. The interesting frames and the ones immediately before or after them are written to the filtered clip.
 
+## Fast Start
+- Install Python
+- Install the dependencies
+- In `main.py`, set `generate_inputs=True`. This will generate the inputs for the machine learning model.
+- Sort the inputs in the `inputs` folder into 2 folders: `true` and `false`. The `true` folder contains the interesting frames, and the `false` folder contains the not interesting frames. You need to get at least 2k images in total.
+- Train the machine learning model using `ml.py`. This should not take too long.
+- In `main.py`, set `generate_inputs=False`. This will use the machine learning model to filter the video.
+- In `main.py`, set the `folder` variable to the path to the directory containing the video files to be filtered.
+
 ## Dependencies
 
-This script requires the following Python packages:
-- moviepy
-- fastai
-- numpy
-- loguru
-- tqdm
-
-You can install these packages using pip:
+Use the following command to install the dependencies:
 
 `pip install -r requirements.txt`
 
@@ -28,7 +30,7 @@ To use the script, modify the following variables at the bottom of the script:
 
 Once the variables are set, run the script using the following command:
 
-`python apex_legends_filtering.py`
+`python main.py`
 
 The script will process each mp4 file in the specified directory and save the filtered clip as a new mp4 file with the same name as the original file.
 
@@ -46,6 +48,13 @@ You have to sort the pictures into 2 datasets. The proposed classes are :
 - `false` : not interesting frames
   - nothing happens in the game
   - every screenshot that isn't Apex Legends
+
+You need a minimum of 2k images in total.
+Make sure to have diverse images in your dataset:
+- different backgrounds: sky, buildings, explosions, etc.
+- different weapons: snipers, shotguns, pistols, etc.
+- different champions and their abilities
+- if you choose to include ramaining teams counter, you need to have all of them (the 19).
 
 ### Examples of interesting images
 
