@@ -19,6 +19,8 @@ Are you looking to create a highlights reel of your *best moments* in Apex Legen
 - Train the machine learning model using `ml.py`. This should not take too long.
 - In `main.py`, set `generate_inputs=False`. This will use the machine learning model to filter the video.
 - In `main.py`, set the `folder` variable to the path to the directory containing the video files to be filtered.
+- Run the script using `python main.py` and wait for the script to finish.
+- Enjoy your new highlights !
 
 ## Dependencies
 
