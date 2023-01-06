@@ -12,6 +12,7 @@ This script requires the following Python packages:
 - tqdm
 
 You can install these packages using pip:
+
 `pip install -r requirements.txt`
 
 ## Usage
@@ -33,7 +34,7 @@ The script will process each mp4 file in the specified directory and save the fi
 
 ## Machine Learning
 
-The machine learning aspect of the script is handled in the ml.py file. This file contains the code for training and evaluating the machine learning model used to classify the frames as interesting or not. The specific implementation details of the machine learning model are not provided in this script.
+The machine learning aspect of the script is handled in the `ml.py` file. This file contains the code for training and evaluating the machine learning model used to classify the frames as interesting or not. The specific implementation details of the machine learning model are not provided in this script.
 
 ## Dataset
 
@@ -45,3 +46,21 @@ You have to sort the pictures into 2 datasets. The proposed classes are :
 - `false` : not interesting frames
   - nothing happens in the game
   - every screenshot that isn't Apex Legends
+
+### Examples of interesting images
+
+![interesting image 1](images/interesting1.png)
+![interesting image 2](images/interesting2.png)
+![interesting image 3](images/interesting3.png)
+![interesting image 4](images/interesting4.png)
+![interesting image 5](images/interesting5.png)
+![interesting image 6](images/interesting6.png)
+
+### Examples of not interesting images
+
+![Not interesting image 1](images/not_interesting1.png)
+![Not interesting image 2](images/not_interesting2.png)
+![Not interesting image 3](images/not_interesting3.png)
+![Not interesting image 4](images/not_interesting4.png)
+![Not interesting image 5](images/not_interesting5.png)
+![Not interesting image 6](images/not_interesting6.png)
