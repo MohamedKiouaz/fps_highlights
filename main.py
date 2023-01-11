@@ -3,10 +3,12 @@ from concurrent.futures import ThreadPoolExecutor
 
 import moviepy.editor as mp
 from loguru import logger as log
+from PyQt5 import QtWidgets, QtGui
 
-from apex_highlight_creator import (create_highlight,
+from apex_highlights import (create_highlight,
                                     generate_inputs_from_image,
-                                    make_sure_folders_exist)
+                                    make_sure_folders_exist,
+                                    adapt_rois)
 
 if __name__ == '__main__':
     # if True, generate inputs from the videos
@@ -22,7 +24,7 @@ if __name__ == '__main__':
 
     # if in input generation, generate one input every
     # this number needs to be high because we have to see a variaty of situations
-    # many guns, many champions, many maps...
+    # many guns, many champions, many maps, many gamemodes...
     input_generation_sampling = 50
 
     # if in prediction mode, use one frame every
@@ -41,7 +43,7 @@ if __name__ == '__main__':
     rois = {'center': (719, 1289), 'teamsleft': (88, 2049)}
 
     # default image size
-    default_image_size = (2560, 1440)
+    default_image_size = (1440, 2560)
 
     make_sure_folders_exist()
 
@@ -50,16 +52,18 @@ if __name__ == '__main__':
         for filename in os.listdir(folder):
             if not filename.endswith(".mp4"):
                 continue
-
+            
             log.info(f'Working on {filename}.')
 
             path = os.path.join(folder, filename)
 
             clip = mp.VideoFileClip(path)
+            
+            a_rois, a_roi_size = adapt_rois(rois, roi_size, default_image_size, clip.size[::-1])
 
             if generate_inputs:
-                generate_inputs_from_image(
-                    clip, filename, rois, roi_size, input_generation_sampling)
+                executor.submit(generate_inputs_from_image,
+                    clip, filename, a_rois, a_roi_size, input_generation_sampling)
             else:
                 executor.submit(create_highlight, clip, filename,
-                                predict_sampling, keep_before, keep_after, rois, roi_size)
+                                predict_sampling, keep_before, keep_after, a_rois, a_roi_size)
