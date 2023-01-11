@@ -1,56 +1,49 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
 
-import moviepy.editor as mp
 from loguru import logger as log
 from PyQt5 import QtWidgets, QtGui
 
-from apex_highlights import (create_highlight,
-                             generate_inputs_from_image,
-                             make_sure_folders_exist,
-                             adapt_rois)
-
+from apex_highlight_creator import (create_folders,
+                             HighlightVideoCreator)
+from ml import create_model
 
 class ProgressBarWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setGeometry(100, 100, 300, 50)
+        self.setGeometry(100, 100, 300, 500)
         self.setWindowTitle("Progress Bar")
-
-        # Create a progress bar
-        self.progress_bar = QtWidgets.QProgressBar(self)
-        self.progress_bar.setGeometry(10, 10, 280, 30)
+        
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(self.layout)
 
         # Show the progress bar window
         self.show()
 
-    def update_progress_bar(self, current, total):
-        progress = current / total * 100
-        self.progress_bar.setValue(progress)
-
     def start_processing(self):
-        folder = "path/to/folder"
         log.info(f'Working on {folder}.')
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            for i, filename in enumerate(os.listdir(folder)):
-                if not filename.endswith(".mp4"):
-                    continue
+        self.executor = ThreadPoolExecutor(max_workers=2)
+        model = create_model()
+        for i, filename in enumerate(os.listdir(folder)[:4]):
+            if not filename.endswith(".mp4"):
+                continue
+            
+            pb = QtWidgets.QProgressBar(self)
+            pb.setGeometry(10, 10 + 40 * i, 280, 30)
+            pb.show()
+            self.layout.addWidget(pb)
+            
+            log.info(f'Working on {filename}.')
 
-                log.info(f'Working on {filename}.')
-                self.update_progress_bar(i, len(os.listdir(folder)))
+            hlvc = HighlightVideoCreator(model, folder, filename, rois, roi_size, default_image_size)
+            hlvc.progress.connect(pb.setValue)
 
-                path = os.path.join(folder, filename)
-                clip = mp.VideoFileClip(path)
-                a_rois, a_roi_size = adapt_rois(
-                    rois, roi_size, default_image_size, clip.size[::-1])
+            if generate_inputs:
+                self.executor.submit(hlvc.generate_input_images, input_generation_sampling)
+            else:
+                self.executor.submit(hlvc.create_highlight, predict_sampling, keep_before, keep_after)
 
-                if generate_inputs:
-                    executor.submit(generate_inputs_from_image, clip, filename,
-                                    a_rois, a_roi_size, input_generation_sampling)
-                else:
-                    executor.submit(create_highlight, clip, filename, predict_sampling,
-                                    keep_before, keep_after, a_rois, a_roi_size)
-
+        log.info('Started processes.')
 
 if __name__ == "__main__":
     # if True, generate inputs from the videos
@@ -87,7 +80,7 @@ if __name__ == "__main__":
     # default image size
     default_image_size = (1440, 2560)
 
-    make_sure_folders_exist()
+    create_folders()
     
     app = QtWidgets.QApplication([])
     window = ProgressBarWindow()
