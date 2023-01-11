@@ -3,7 +3,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import moviepy.editor as mp
 from loguru import logger as log
-from PyQt5 import QtWidgets, QtGui
 
 from apex_highlights import (create_highlight,
                                     generate_inputs_from_image,
