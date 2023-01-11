@@ -126,7 +126,7 @@ def get_mask(clip, subframes, model, name):
                 pred_class, pred_idx, outputs = model.predict(subframe)
             pred.append(pred_class == 'true')
 
-            if i % 5 == 0:
+            if i % 3 == 0:
                 img_path = f"outputs/{pred_class}/{key}_{name[-20:]}_{i/60:.2f}.png"
                 if not os.path.exists(img_path):
                     subframe = subframe.astype(np.uint8)
@@ -188,3 +188,20 @@ def make_sure_folders_exist():
     """
     for folder in ['inputs/train/true', 'inputs/train/false', 'inputs/valid/true', 'inputs/valid/false', 'outputs/true', 'outputs/false', 'videos']:
         os.makedirs(folder, exist_ok=True)
+
+def adapt_rois(rois, roi_size, base_image_size, final_image_size):
+    """
+    Adapt the rois to the final image size
+    """
+    adapted_rois = {
+        key: (
+            int(roi[0] * final_image_size[0] / base_image_size[0]),
+            int(roi[1] * final_image_size[1] / base_image_size[1]),
+        )
+        for key, roi in rois.items()
+    }
+
+    adapted_roi_size = (int(roi_size[0] * final_image_size[0] / base_image_size[0]), 
+    int(roi_size[1] * final_image_size[1] / base_image_size[1]))
+    
+    return adapted_rois, adapted_roi_size
