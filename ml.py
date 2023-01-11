@@ -14,7 +14,7 @@ def create_model():
     data = ImageDataLoaders.from_folder(path, train='train', valid='valid')
     
     # resize to 100x100
-    data.add_tfms(Resize(100, method='squish'), 'before_batch')
+    #data.add_tfms(Resize(100, method='squish'), 'before_batch')
 
     log.info("Creating Model.")
     model = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy,RocAucBinary()])
