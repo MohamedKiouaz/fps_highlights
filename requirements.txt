@@ -3,3 +3,4 @@ moviepy
 fastai
 loguru
 tqdm
+PyQt5
