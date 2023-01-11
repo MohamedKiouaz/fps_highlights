@@ -60,6 +60,7 @@ def get_subframe(image, position, subframe_size):
     return image[row_min:row_min+frame_rows, col_min:col_min+frame_cols]
 
 
+
 def create_subclip(clip, indices):
     """
     Given a clip and the indices of the relavant frames, create a clip only with those frames
@@ -120,6 +121,7 @@ def get_mask(clip, subframes, model, name):
     """
     mask = np.zeros(int(clip.duration * clip.fps))
     for i, subf in tqdm(subframes.items()):
+        print(i)
         pred = []
         for key, subframe in subf.items():
             with model.no_bar():
