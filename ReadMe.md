@@ -12,7 +12,7 @@ Are you looking to create a highlights reel of your *best moments* in Apex Legen
 - Lightweight and easy to use
 
 ## Fast Start
-- Install Python
+- Install Python (for the ones that know what they are doing, use a virtual environment)
 - Install the dependencies
 - In `main.py`, set `generate_inputs=True`. This will generate the inputs for the machine learning model.
 - Sort the inputs in the `inputs` folder into 2 folders: `true` and `false`. The `true` folder contains the interesting frames, and the `false` folder contains the not interesting frames. You need to get at least 2k images in total. 
@@ -28,21 +28,12 @@ Use the following command to install the dependencies:
 
 `pip install -r requirements.txt`
 
-## Usage
+## Files
 
-Run the script using the following command:
-
-`python main.py`
-
-The script will process each mp4 file in the specified directory and save the filtered clip as a new mp4 file with the same name as the original file.
-
-## Machine Learning
-
-The machine learning aspect of the script is handled in the `ml.py` file.
-
-This file contains the code for training and evaluating the machine learning model used to classify the frames as interesting or not.
-
-The specific implementation details of the machine learning model are not provided in this script.
+- `main.py` : main script
+- `ml.py` : machine learning script
+- `graphs.py` : script for generating graphs
+- `apex_highlights.py` : all the functions
 
 ## Dataset
 
