@@ -6,6 +6,8 @@ import numpy as np
 from loguru import logger as log
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from ml import create_model
+
 def expand_ones(arr, before, after):
     """
     Expand the ones in an array of zeros and ones.
@@ -93,9 +95,9 @@ def adapt_rois(rois, roi_size, base_image_size, final_image_size):
 class HighlightVideoCreator(QObject):
     progress = pyqtSignal(int)
     
-    def __init__(self, model, folder, filename, rois, roi_size, default_image_size):
+    def __init__(self, folder, filename, rois, roi_size, default_image_size):
         super().__init__()
-        self.model = model
+        
         self.folder = folder
         self.filename = filename
         self.path = os.path.join(folder, filename)
@@ -145,13 +147,17 @@ class HighlightVideoCreator(QObject):
         Given a clip and the subframes, predict if each frame is interesting or not
         returns a mask with 1s where the frame is interesting and 0s where it is not
         """
+        self.progress.emit(15)
+
+        self.model, _ = create_model()
+
         mask = np.zeros(int(self.clip.duration * self.clip.fps))
         for i, subf in self.subframes.items():
-            self.progress.emit(i / len(self.subframes) * 100)
+            self.progress.emit((i+1.) / len(self.subframes) * 50 + 20)
 
             pred = []
             for key, subframe in subf.items():
-                with self.model.no_bar():
+                with self.model.no_mbar():
                     pred_class, pred_idx, outputs = self.model.predict(subframe)
                 pred.append(pred_class == 'true')
 
@@ -160,8 +166,8 @@ class HighlightVideoCreator(QObject):
                     if not os.path.exists(img_path):
                         subframe = subframe.astype(np.uint8)
                         imageio.imwrite(img_path, subframe)
-
-            mask[i] = any(pred)
+            if i < mask.size:
+                mask[i] = any(pred)
         return mask
 
     
@@ -172,7 +178,7 @@ class HighlightVideoCreator(QObject):
         roi_images = {}
         times = np.arange(0, self.clip.duration, 1.0/self.clip.fps)
         for i, t in enumerate(times):
-            self.progress.emit(i / times.size * 100)
+            self.progress.emit((i+1.) / times.size * 100 * .15)
             if i % sampling != 0:
                 continue
             try:
@@ -187,22 +193,34 @@ class HighlightVideoCreator(QObject):
         """
         Given a clip, create a video with only the interesting frames
         """
+        self.progress.emit(0)
 
         a_rois, a_roi_size = adapt_rois(self.rois, self.roi_size, self.default_image_size, self.clip.size[::-1])
 
         # Get the subframes of the regions of interest
         self.subframes = self.get_roi_images(a_rois, a_roi_size, predict_sampling)
 
+        log.info(f"{self.filename}: collected {len(self.subframes)} subframes")
+
         # Predict if each frame is interesting or not
         mask = self.get_mask(self.filename[:-20])
+
+        log.info(f"{self.filename}: selected {mask.sum()} interesting frames")
 
         # Select the frames around the interesting frames
         mask = expand_ones(mask, keep_before * self.clip.fps, keep_after * self.clip.fps)
 
         output_path = f"videos/{self.filename[:-4]}_shortened.mp4"
+        
+        self.progress.emit(80)
+
+        log.info(f"{self.filename}: creating {output_path}")
 
         # Create the video with only the interesting frames
         self.create_highlight_video(mask, output_path)
+
+        log.info(f"{self.filename}: created {output_path}")
+        self.progress.emit(100)
 
     def generate_input_images(self, input_generation_sampling):
         """

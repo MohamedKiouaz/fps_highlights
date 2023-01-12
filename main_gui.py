@@ -6,37 +6,38 @@ from PyQt5 import QtWidgets, QtGui
 
 from apex_highlight_creator import (create_folders,
                              HighlightVideoCreator)
-from ml import create_model
 
 class ProgressBarWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setGeometry(100, 100, 300, 500)
+        self.setGeometry(100, 100, 1500, 600)
         self.setWindowTitle("Progress Bar")
-        
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.setLayout(self.layout)
+        self.widget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.widget)
 
-        # Show the progress bar window
-        self.show()
+        self.layout = QtWidgets.QVBoxLayout(self.widget)
+        self.widget.setLayout(self.layout)
 
     def start_processing(self):
         log.info(f'Working on {folder}.')
-        self.executor = ThreadPoolExecutor(max_workers=2)
-        model = create_model()
-        for i, filename in enumerate(os.listdir(folder)[:4]):
+        self.executor = ThreadPoolExecutor(max_workers=3)
+        for i, filename in enumerate(os.listdir(folder)):
             if not filename.endswith(".mp4"):
                 continue
             
             pb = QtWidgets.QProgressBar(self)
-            pb.setGeometry(10, 10 + 40 * i, 280, 30)
-            pb.show()
+            pb.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Preferred)
+            
+            pb.setFormat(f'{filename} %p%')
+
             self.layout.addWidget(pb)
             
             log.info(f'Working on {filename}.')
-
-            hlvc = HighlightVideoCreator(model, folder, filename, rois, roi_size, default_image_size)
+            
+            hlvc = HighlightVideoCreator(folder, filename, rois, roi_size, default_image_size)
             hlvc.progress.connect(pb.setValue)
+
+            #hlvc.create_highlight(predict_sampling, keep_before, keep_after)
 
             if generate_inputs:
                 self.executor.submit(hlvc.generate_input_images, input_generation_sampling)
@@ -44,6 +45,9 @@ class ProgressBarWindow(QtWidgets.QMainWindow):
                 self.executor.submit(hlvc.create_highlight, predict_sampling, keep_before, keep_after)
 
         log.info('Started processes.')
+        
+        # Show the progress bar window
+        self.show()
 
 if __name__ == "__main__":
     # if True, generate inputs from the videos
