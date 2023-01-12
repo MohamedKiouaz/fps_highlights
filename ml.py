@@ -7,20 +7,23 @@ from fastai.vision.models import resnet18
 from fastai.vision.augment import Resize
 from loguru import logger as log
 
+from tqdm import tqdm
+
 def create_model():
     path = Path('inputs')
 
     log.info("Loading data.")
-    data = ImageDataLoaders.from_folder(path, train='train', valid='valid')
+    data = ImageDataLoaders.from_folder(path, train='train', valid='valid') 
     
     # resize to 100x100
-    #data.add_tfms(Resize(100, method='squish'), 'before_batch')
+    data.add_tfms(Resize((100, 100), method='squish'), 'after_item')
 
     log.info("Creating Model.")
     model = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy,RocAucBinary()])
 
-    log.info("Loading weights.")
-    model = model.load('resnet18')
+    if Path('inputs/models/resnet18.pth').exists():
+        log.info("Loading weights.")
+        model = model.load('resnet18')
 
     log.info("Done.")
     return model, data
@@ -37,7 +40,7 @@ if __name__ == '__main__':
     with open('inputs/models/summary.txt', 'w') as f:
         f.write(learn.summary())
 
-    log.info("Showing results.")
+    #log.info("Showing results.")
     #interpretation = Interpretation.from_learner(learn)
     #interpretation.show_results([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
@@ -50,6 +53,7 @@ if __name__ == '__main__':
     for _ in range(epochs//5):
         log.info("Training.")
         learn.fit(5)
-
-        learn.save('resnet18')
         log.info(f'Epoch {learn.epoch} done.')
+      
+        log.info("Saving model.")
+        learn.save('resnet18')
