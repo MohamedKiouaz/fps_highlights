@@ -1,12 +1,11 @@
 import os
-from concurrent.futures import ThreadPoolExecutor
 
 import moviepy.editor as mp
 from loguru import logger as log
 
 from apex_highlights import (create_highlight,
                                     generate_inputs_from_image,
-                                    make_sure_folders_exist,
+                                    create_folders,
                                     adapt_rois)
 
 if __name__ == '__main__':
@@ -44,25 +43,21 @@ if __name__ == '__main__':
     # default image size
     default_image_size = (1440, 2560)
 
-    make_sure_folders_exist()
+    create_folders()
 
     log.info(f'Working on {folder}.')
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        for filename in os.listdir(folder):
-            if not filename.endswith(".mp4"):
-                continue
-            
-            log.info(f'Working on {filename}.')
+    for filename in os.listdir(folder):
+        if not filename.endswith(".mp4"):
+            continue
+        
+        log.info(f'Working on {filename}.')
 
-            path = os.path.join(folder, filename)
+        path = os.path.join(folder, filename)
 
-            clip = mp.VideoFileClip(path)
-            
+        with mp.VideoFileClip(path) as clip:
             a_rois, a_roi_size = adapt_rois(rois, roi_size, default_image_size, clip.size[::-1])
 
             if generate_inputs:
-                executor.submit(generate_inputs_from_image,
-                    clip, filename, a_rois, a_roi_size, input_generation_sampling)
+                generate_inputs_from_image(clip, filename, a_rois, a_roi_size, input_generation_sampling)
             else:
-                executor.submit(create_highlight, clip, filename,
-                                predict_sampling, keep_before, keep_after, a_rois, a_roi_size)
+                create_highlight(clip, filename, predict_sampling, keep_before, keep_after, a_rois, a_roi_size)
