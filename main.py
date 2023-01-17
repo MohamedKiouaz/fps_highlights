@@ -50,8 +50,8 @@ if __name__ == '__main__':
         if not filename.endswith(".mp4"):
             continue
         
-        log.info(f'Working on {filename} ({file_number}/{len(folder)}).')
-
+        log.info(f'Working on {filename} ({file_number + 1}/{len(folder)}).')
+ 
         path = os.path.join(folder, filename)
 
         with mp.VideoFileClip(path) as clip:
