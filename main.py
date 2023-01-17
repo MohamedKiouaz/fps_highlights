@@ -46,11 +46,11 @@ if __name__ == '__main__':
     create_folders()
 
     log.info(f'Working on {folder}.')
-    for filename in os.listdir(folder):
+    for file_number, filename in enumerate(os.listdir(folder)):
         if not filename.endswith(".mp4"):
             continue
         
-        log.info(f'Working on {filename}.')
+        log.info(f'Working on {filename} ({file_number}/{len(folder)}).')
 
         path = os.path.join(folder, filename)
 
