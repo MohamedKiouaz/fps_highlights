@@ -1,4 +1,5 @@
 import os
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 
 import imageio
@@ -88,6 +89,10 @@ def create_highlight_video(clip, mask, output_path):
     Given a clip and a mask, create a video with only the frames where the mask is 1
     """
 
+    if mask.sum()/mask.size >= .99:
+        shutil.copyfile(clip.filename, output_path)
+        return
+
     mask_indices = mask.nonzero()[0]
 
     if len(mask_indices) > 0:
@@ -128,7 +133,7 @@ def get_mask(clip, subframes, model, name):
             pred.append(pred_class == 'true')
 
             if i % 3 == 0:
-                img_path = f"outputs/{pred_class}/{key}_{name[-20:]}_{i/60:.2f}.png"
+                img_path = f"outputs/{pred_class}/{key}_{name}_{i/60:.2f}.png"
                 if not os.path.exists(img_path):
                     subframe = subframe.astype(np.uint8)
                     imageio.imwrite(img_path, subframe)
@@ -179,6 +184,7 @@ def create_highlight(clip, filename, predict_sampling, keep_before, keep_after, 
 
     output_path = f"videos/{filename[:-4]}_shortened.mp4"
 
+    
     # Create the video with only the interesting frames
     create_highlight_video(clip, mask, output_path)
 
