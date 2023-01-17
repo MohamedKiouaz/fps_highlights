@@ -106,6 +106,10 @@ class HighlightVideoCreator(QObject):
         self.roi_size = roi_size
         self.default_image_size = default_image_size
 
+    def __del__(self):
+        self.clip.close()
+    
+
     def set_roi_size(self, roi_size):
         self.roi_size = roi_size
 
