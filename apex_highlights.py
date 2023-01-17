@@ -121,10 +121,9 @@ def get_mask(clip, subframes, model, name):
     """
     mask = np.zeros(int(clip.duration * clip.fps))
     for i, subf in tqdm(subframes.items()):
-        print(i)
         pred = []
         for key, subframe in subf.items():
-            with model.no_bar():
+            with model.no_mbar():
                 pred_class, pred_idx, outputs = model.predict(subframe)
             pred.append(pred_class == 'true')
 
@@ -133,8 +132,8 @@ def get_mask(clip, subframes, model, name):
                 if not os.path.exists(img_path):
                     subframe = subframe.astype(np.uint8)
                     imageio.imwrite(img_path, subframe)
-
-        mask[i] = any(pred)
+        if i < mask.size:
+            mask[i] = any(pred)
     return mask
 
 
@@ -184,7 +183,7 @@ def create_highlight(clip, filename, predict_sampling, keep_before, keep_after, 
     create_highlight_video(clip, mask, output_path)
 
 
-def make_sure_folders_exist():
+def create_folders():
     """
     Create the folders where we will store the inputs and outputs
     """
