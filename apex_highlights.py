@@ -7,6 +7,7 @@ import moviepy.editor as mp
 import numpy as np
 from tqdm import tqdm
 from loguru import logger as log
+from apex_functions import create_folders
 
 from ml import create_model
 
@@ -187,14 +188,6 @@ def create_highlight(clip, filename, predict_sampling, keep_before, keep_after, 
     
     # Create the video with only the interesting frames
     create_highlight_video(clip, mask, output_path)
-
-
-def create_folders():
-    """
-    Create the folders where we will store the inputs and outputs
-    """
-    for folder in ['inputs/train/true', 'inputs/train/false', 'inputs/valid/true', 'inputs/valid/false', 'outputs/true', 'outputs/false', 'videos']:
-        os.makedirs(folder, exist_ok=True)
 
 def adapt_rois(rois, roi_size, base_image_size, final_image_size):
     """
