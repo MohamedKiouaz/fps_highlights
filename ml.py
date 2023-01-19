@@ -7,6 +7,8 @@ from fastai.vision.models import resnet18
 from fastai.vision.augment import Resize
 from loguru import logger as log
 
+from apex_functions import create_folders
+
 from tqdm import tqdm
 
 def create_model():
@@ -31,28 +33,30 @@ def create_model():
 if __name__ == '__main__':
     epochs = 30
 
+    create_folders()
+
     learn, data = create_model()
     
     log.info(f'Training set: {len(data.train_ds)}')
     log.info(f'Validation set: {len(data.valid_ds)}')
     
     log.info("Creating model summary file.")
-    with open('inputs/models/summary.txt', 'w') as f:
+    with open('inputs/models/summary.txt', 'w+') as f:
         f.write(learn.summary())
 
     #log.info("Showing results.")
     #interpretation = Interpretation.from_learner(learn)
     #interpretation.show_results([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
-    log.info("Validating.")
-    log.info(learn.validate())
+    #log.info("Validating.")
+    #log.info(learn.validate())
 
     log.info("Printing confusion matrix.")
     log.info(learn.show_results())
 
-    for _ in range(epochs//5):
+    for _ in range(epochs):
         log.info("Training.")
-        learn.fit(5)
+        learn.fit(1)
         log.info(f'Epoch {learn.epoch} done.')
       
         log.info("Saving model.")
