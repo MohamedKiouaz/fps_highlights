@@ -2,6 +2,8 @@
 
 Are you looking to create a highlights reel of your *best moments* in Apex Legends? Look no further! With this script, you can easily filter through your gameplay footage and extract only the most action-packed and exciting moments. Simply gather and label a dataset of interesting and not interesting frames, train a machine learning model, and let the script do the rest. The resulting video clip will feature all the *high-stakes battles* and *triumphant victories* you want to remember, without any of the dull downtime in between. Whether you're a seasoned pro or a newcomer to the game, this script is a must-have tool for any Apex Legends fan looking to relive their greatest moments.
 
+Note that this script can also be used for other games : if it is possible to decide if a frame is interesting or not, only based on the content of the frame (and not the one before or the one after or the sound), then it is possible to use this script to filter through your game records.
+
 ## Features
 
 - Automatically filters through gameplay footage and extracts only the most exciting moments
@@ -31,6 +33,12 @@ Are you looking to create a highlights reel of your *best moments* in Apex Legen
 - In `main.py`, set the `folder` variable to the path to the directory containing the video files to be filtered.
 - Run the script using `python main.py` and wait for the script to finish.
 - Enjoy your new highlights !
+
+## Tips
+
+- Use PyPy instead of Python to speed up the script.
+- Use PowerToys to block the pc from going to sleep while the script is running.
+- You can use Instant Replay (or any other software) to record only the last X seconds of your gameplay. This will reduce the size of the video files and the time needed to process them.
 
 ## Dependencies
 
@@ -96,9 +104,12 @@ If in doubt, remove the image from the dataset, you can always add more images l
 My dataset is not public for now but it will be in a near future. I'm currently working on a way to make it available to everyone.
 
 That being said, I play in french, high settings, 4K and record at 60fps.
+You and me probably don't have the same brightness either.
 In my dataset, there is a few images of my old 1080p setup, but most of them are from my current setup.
 This means that the images in my dataset are *probably* not compatible with your game settings.
 You will need to supplement the dataset with your own images.
+
+THAT BEING SAID, let's build a dataset together ! Once you have sorted your own images, you can send them to me and I will add them to the dataset. This way, we can all benefit from a better dataset.
 
 ## Contributing
 
