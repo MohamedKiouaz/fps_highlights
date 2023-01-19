@@ -4,7 +4,7 @@ Are you looking to create a highlights of your *best moments* in Apex Legends? L
 
 Note that this script can also be used for other games : if it is possible to decide if a frame is interesting or not, only based on the content of the frame (and not the one before or the one after or the sound), then it is possible to use this script to filter through your game records.
 
-Want to see what a highlights looks like? Check out this [video](https://streamable.com/46ze89) !
+Want to see what a highlights looks like? Check out this [video](https://streamable.com/46ze89) ! You can see that anything that isn't a kill or damage dealt is filtered out. The original  video is 2 mins long, but the highlights are only 48 seconds long.
 
 ## Features
 
