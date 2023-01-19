@@ -13,7 +13,9 @@ Note that this script can also be used for other games : if it is possible to de
 - Decide how many seconds of footage to include before and after each interesting frame
 - Lightweight and easy to use
 
-## Fast Start with the provided model
+## Fast Start
+
+### with the provided model
 - Install Python (for the ones that know what they are doing, use a virtual environment)
 - Install the dependencies
 - Download the provided model `resnet18.pth` and place it in `inputs\models`.
@@ -21,7 +23,7 @@ Note that this script can also be used for other games : if it is possible to de
 - Run the script using `python main.py` and wait for the script to finish.
 - Enjoy your new highlights !
 
-## Fast Start with your own dataset
+### with your own dataset
 - Install Python (for the ones that know what they are doing, use a virtual environment)
 - Install the dependencies
 - In `main.py`, set `generate_inputs=True`. This will generate the inputs for the machine learning model.
