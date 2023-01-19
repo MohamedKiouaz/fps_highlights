@@ -18,7 +18,7 @@ Note that this script can also be used for other games : if it is possible to de
 ### with the provided model
 - Install Python (for the ones that know what they are doing, use a virtual environment)
 - Install the dependencies
-- Download the provided model `resnet18.pth` and place it in `inputs\models`.
+- Download this [model](https://drive.google.com/file/d/11_Zoim-StTNyQd62MSAv2JyK4VA-msA1/view?usp=sharing) `resnet18.pth` and place it in `inputs\models`.
 - In `main.py`, set the `folder` variable to the path to the directory containing the video files to be filtered.
 - Run the script using `python main.py` and wait for the script to finish.
 - Enjoy your new highlights !
