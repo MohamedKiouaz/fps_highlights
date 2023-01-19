@@ -7,6 +7,7 @@ from loguru import logger as log
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from ml import create_model
+from apex_functions import create_folders
 
 def expand_ones(arr, before, after):
     """
@@ -67,13 +68,6 @@ def dump_inputs(rois, name):
             img_path = f"inputs/{key}_{name}_{i}.png"
             if not os.path.exists(img_path):
                 imageio.imwrite(img_path, img)
-
-def create_folders():
-    """
-    Create the folders where we will store the inputs and outputs
-    """
-    for folder in ['inputs/train/true', 'inputs/train/false', 'inputs/valid/true', 'inputs/valid/false', 'outputs/true', 'outputs/false', 'videos']:
-        os.makedirs(folder, exist_ok=True)
 
 def adapt_rois(rois, roi_size, base_image_size, final_image_size):
     """
