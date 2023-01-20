@@ -7,7 +7,7 @@ from loguru import logger as log
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from ml import create_model
-from apex_functions import create_folders
+from fps_functions import create_folders
 
 def expand_ones(arr, before, after):
     """
