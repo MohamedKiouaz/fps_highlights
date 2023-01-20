@@ -21,6 +21,7 @@ def expand_ones(arr, before, after):
 
     """
     arr = np.array(arr)
+    arr = arr == 1
 
     # Find the indices of the zeros in the array
     before = int(before)
@@ -103,7 +104,9 @@ def create_highlight_video(clip, mask, output_path):
     """
 
     if mask.sum()/mask.size >= .99:
+        # If the mask is almost all ones, just copy the original video
         shutil.copyfile(clip.filename, output_path)
+        log.info("Video is almost all highlight, copying original video instead of creating a new one")
         return
 
     mask_indices = mask.nonzero()[0]
@@ -126,6 +129,10 @@ def dump_inputs(rois, name):
                 imageio.imwrite(img_path, img)
 
 class FPSHighlighter:
+    """
+    A class that highlights the frames of a video where a certain action is performed
+    """
+
     def __init__(self, path):
         self.clip = mp.VideoFileClip(path)
         path = Path(self.clip.filename)
@@ -166,20 +173,24 @@ class FPSHighlighter:
                 continue
         return roi_images
 
-    def get_mask(self, name, previous_mask=None):
+    def get_mask(self):
         """
         Given a clip, extract the rois and predict whether they are highlights or not
         returns a mask of the same size as the clip
         """
 
-        mask, times = self.init_mask(previous_mask)
-        
+        mask, times = self.init_mask()
+
         for i, t in tqdm(enumerate(times), total=times.size):
             if i % self.predict_sampling != 0:
                 continue
 
+            if i > self.keep_before and mask[i-self.keep_before//2:i].max() > 0:
+                # No need to predict if this frame is already a neighbor of a highlight
+                continue
+
             if i > 0 and i % (60 * self.predict_sampling) == 0:
-                np.save(f"temp/{name}.npy", mask)
+                np.save(f"temp/{self.basename}.npy", mask)
             
             try:
                 frame = self.clip.get_frame(t)
@@ -193,7 +204,7 @@ class FPSHighlighter:
                     pred.append(pred_class)
                     
                     if i % (15 * self.predict_sampling) == 0:
-                        subframe_path = f"outputs/{pred_class}/{key}_{name}_{i/60:.2f}.png"
+                        subframe_path = f"outputs/{pred_class}/{key}_{self.basename}_{t:.2f}.png"
                         if not os.path.exists(subframe_path):
                             subframe = subframe.astype(np.uint8)
                             imageio.imwrite(subframe_path, subframe)
@@ -204,28 +215,35 @@ class FPSHighlighter:
             except Exception:
                 continue
         
+        np.save(f"temp/{self.basename}.npy", mask)
+
         return mask
 
-    def init_mask(self, previous_mask):
+    def init_mask(self):
         """
         Given a clip, initialize the mask and the times of the frames
         """
 
-        if previous_mask is None:
+        mask = None
+
+        # if we have already generated the mask, load it
+        if os.path.exists(f"temp/{self.basename}.npy"):
+            mask = np.load(f"temp/{self.basename}.npy")
+
+        if mask is None:
             mask = -np.ones(int(self.clip.duration * self.clip.fps))
-        else:
-            mask = previous_mask
 
         # get the times of the frames that need to be predicted
         times = np.arange(0, self.clip.duration, 1.0/self.clip.fps)
         
         # get the last index that was already predicted
-        if previous_mask is not None:
-            where = np.where(previous_mask != -1)
-            if len(where[0]) > 0:
-                last_index = np.where(mask != -1)[0][-1]
-                log.info(f"Recovered from previous run: {last_index/mask.size*100:.2f}%.")
-                times = times[last_index:]
+        where = np.where(mask != -1)
+        if len(where[0]) > 0:
+            last_index = np.where(mask != -1)[0][-1]
+            log.info(f"Recovered from previous run: {last_index/mask.size*100:.2f}%.")
+            duration = expand_ones(mask, self.keep_before, self.keep_after).sum()
+            log.info(f"Recovered highlight duration: {duration/self.clip.fps:.2f}s.")
+            times = times[last_index:]
 
         return mask, times
 
@@ -254,19 +272,11 @@ class FPSHighlighter:
         # We need to load the model to make predictions
         self.model, _ = create_model()
         
-        nickname = self.basename
-
-        # if we have already generated the mask, load it
-        if os.path.exists(f"temp/{nickname}.npy"):
-            mask = np.load(f"temp/{nickname}.npy")
-        else:
-            mask = None
-
         # Get the subframes of the regions of interest
-        mask = self.get_mask(nickname, previous_mask=mask)
+        mask = self.get_mask()
 
         # Save the mask to temp folder in case we need to resume
-        np.save(f"temp/{nickname}.npy", mask)
+        np.save(f"temp/{self.basename}.npy", mask)
 
         # Select the frames around the interesting frames
         mask = expand_ones(mask, self.keep_before * self.clip.fps, self.keep_after * self.clip.fps)
@@ -274,4 +284,4 @@ class FPSHighlighter:
         # Create the video with only the interesting frames
         output_path = f"videos/{self.basename}_shortened.mp4"
         
-        create_highlight_video(self, mask, output_path)
+        create_highlight_video(self.clip, mask, output_path)
