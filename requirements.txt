@@ -4,3 +4,4 @@ fastai
 loguru
 tqdm
 PyQt5
+pathlib

@@ -1,12 +1,11 @@
 import os
+import glob
 
-import moviepy.editor as mp
 from loguru import logger as log
 
-from apex_highlights import (create_highlight,
-                                    generate_inputs_from_image,
-                                    create_folders,
-                                    adapt_rois)
+from fps_functions import create_folders
+
+from FPSHighlighter import FPSHighlighter
 
 if __name__ == '__main__':
     # if True, generate inputs from the videos
@@ -31,7 +30,7 @@ if __name__ == '__main__':
     predict_sampling = 5
 
     # keep this number of seconds before and after an interesting frame
-    keep_after = 5  # sec
+    keep_after = 2  # sec
     keep_before = 4  # sec
 
     # size of the regions of interest
@@ -46,18 +45,17 @@ if __name__ == '__main__':
     create_folders()
 
     log.info(f'Working on {folder}.')
-    for file_number, filename in enumerate(os.listdir(folder)):
-        if not filename.endswith(".mp4"):
-            continue
-        
-        log.info(f'Working on {filename} ({file_number + 1}/{len(folder)}).')
- 
-        path = os.path.join(folder, filename)
+    entities = glob.glob(f'{folder}/*.mp4')
+    
+    for file_number, path in enumerate(entities):
+        log.info(f'Working on ({file_number + 1}/{len(entities)}) {path}.')
 
-        with mp.VideoFileClip(path) as clip:
-            a_rois, a_roi_size = adapt_rois(rois, roi_size, default_image_size, clip.size[::-1])
+        highlighter = FPSHighlighter(path)
+        highlighter.set_expand_rules(keep_before, keep_after)
+        highlighter.set_sampling(predict_sampling, input_generation_sampling)
+        highlighter.set_rois(rois, roi_size, default_image_size)
 
-            if generate_inputs:
-                generate_inputs_from_image(clip, filename, a_rois, a_roi_size, input_generation_sampling)
-            else:
-                create_highlight(clip, filename, predict_sampling, keep_before, keep_after, a_rois, a_roi_size)
+        if generate_inputs:
+            highlighter.generate_inputs()
+        else:
+            highlighter.create_highlight()
