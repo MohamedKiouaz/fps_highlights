@@ -7,7 +7,7 @@ from fastai.vision.models import resnet18
 from fastai.vision.augment import Resize
 from loguru import logger as log
 
-from apex_functions import create_folders
+from fps_functions import create_folders
 
 from tqdm import tqdm
 
