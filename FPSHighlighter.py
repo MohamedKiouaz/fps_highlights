@@ -180,9 +180,11 @@ class FPSHighlighter:
         """
 
         mask, times = self.init_mask()
+        
+        skip_to = -1
 
         for i, t in tqdm(enumerate(times), total=times.size):
-            if i % self.predict_sampling != 0:
+            if i % self.predict_sampling != 0 or  i > mask.size or i < skip_to:
                 continue
 
             if i > self.keep_before and mask[i-self.keep_before//2:i].max() > 0:
@@ -191,27 +193,33 @@ class FPSHighlighter:
 
             if i > 0 and i % (60 * self.predict_sampling) == 0:
                 np.save(f"temp/{self.basename}.npy", mask)
-            
+          
             try:
                 frame = self.clip.get_frame(t)
                 
-                pred = []
+                if frame.sum() == 0:
+                    # If the subframe is all black, it is probably a black frame
+                    skip_to = i + 10 * self.predict_sampling
+                    continue
+
                 for key in self.rois:
                     subframe = get_subframe(frame, self.rois[key], self.roi_size)
                     
                     pred_class = self.predict_subframe(subframe)
                     
-                    pred.append(pred_class)
-                    
-                    if i % (15 * self.predict_sampling) == 0:
+                    if i % (2 * self.predict_sampling) == 0:
                         subframe_path = f"outputs/{pred_class}/{key}_{self.basename}_{t:.2f}.png"
                         if not os.path.exists(subframe_path):
                             subframe = subframe.astype(np.uint8)
                             imageio.imwrite(subframe_path, subframe)
+
+                    if pred_class == 'true':
+                        mask[i] = 1
+                        break
                 
-                if i < mask.size:
-                    mask[i] = any(pred)
-        
+                if mask[i] == -1:
+                    mask[i] = 0
+
             except Exception:
                 continue
         
@@ -241,8 +249,10 @@ class FPSHighlighter:
         if len(where[0]) > 0:
             last_index = np.where(mask != -1)[0][-1]
             log.info(f"Recovered from previous run: {last_index/mask.size*100:.2f}%.")
+            
             duration = expand_ones(mask, self.keep_before, self.keep_after).sum()
             log.info(f"Recovered highlight duration: {duration/self.clip.fps:.2f}s.")
+            
             times = times[last_index:]
 
         return mask, times
