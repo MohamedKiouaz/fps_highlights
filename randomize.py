@@ -38,6 +38,7 @@ if __name__ == '__main__':
 
     print('Removed models.')
 
+    print('Verifying image integrity...')
     i = 0
     images = glob.glob('inputs/**/*.png', recursive=True)
     for image in tqdm(images):

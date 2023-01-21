@@ -27,20 +27,21 @@ if __name__ == '__main__':
     # if in prediction mode, use one frame every
     # this number needs to be low because we want to be able to detect the interesting frames
     # if too high, we will miss some interesting frames
-    predict_sampling = 5
+    predict_sampling = 60
 
     # keep this number of seconds before and after an interesting frame
-    keep_after = 2  # sec
-    keep_before = 4  # sec
+    keep_after = 3  # sec
+    keep_before = 3  # sec
+
+    # default image size
+    default_image_size = (1440, 2560)
 
     # size of the regions of interest
     roi_size = (100, 100)
 
     # name and positions of the regions of interest
-    rois = {'center': (719, 1289), 'teamsleft': (88, 2049)}
-
-    # default image size
-    default_image_size = (1440, 2560)
+    # must be in the default image size
+    rois = {'teamsleft': (88, 2049), 'dammage': (632, 1322), 'hitmarker': (720, 1280), 'shield': (975, 2145)}
 
     create_folders()
 

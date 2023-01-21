@@ -31,7 +31,7 @@ def create_model():
     return model, data
 
 if __name__ == '__main__':
-    epochs = 30
+    epochs = 5
 
     create_folders()
 
