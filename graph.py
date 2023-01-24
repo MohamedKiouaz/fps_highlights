@@ -63,13 +63,15 @@ def plot_n_images(images, pred, true, path):
     log.info(f'Saved {path}')
 
 def plot_n_images_by_idxs(images, pred, true, path, idxs):
+    """
+    Plots n images by indexes
+    """
+
     sorted_images = [images[i] for i in idxs]
     sorted_predictions = [pred[i] for i in idxs]
     sorted_y_test = [true[i] for i in idxs]
 
     plot_n_images(sorted_images, sorted_predictions, sorted_y_test, path)
-
-
 
 if __name__ == '__main__':
     model, data = create_model()
