@@ -22,6 +22,10 @@ if __name__ == '__main__':
     train = np.random.choice(train, int(len(train) * ratio), replace=False)
     valid = np.random.choice(valid, int(len(valid) * (1 - ratio)), replace=False)
 
+    # This part is not 100% scientifically valid
+    # (images from the same video could be used in both train and valid)
+    # but it should work well enough for our purposes.
+
     for path in tqdm(train):
         # move to valid
         new_path = path.replace('train', 'valid')
@@ -39,6 +43,12 @@ if __name__ == '__main__':
     print('Removed models.')
 
     print('Verifying image integrity...')
+    # The following code tries to open all images and removes them if they are corrupt.
+    # This is needed because the handling of corrupt images is not very well
+    # handled in fastai.
+    # The code only removes the first 10 corrupt images.
+    # This is a safety measure to prevent any data loss.
+    # We do not expect any corrupt images in the first place.
     i = 0
     images = glob.glob('inputs/**/*.png', recursive=True)
     for image in tqdm(images):
