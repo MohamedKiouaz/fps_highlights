@@ -27,12 +27,10 @@ if __name__ == '__main__':
     # but it should work well enough for our purposes.
 
     for path in tqdm(train):
-        # move to valid
         new_path = path.replace('train', 'valid')
         shutil.move(path, new_path)
 
     for path in tqdm(valid):
-        # move to train
         new_path = path.replace('valid', 'train')
         shutil.move(path, new_path)              
 
