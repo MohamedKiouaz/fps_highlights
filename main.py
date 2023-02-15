@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # if in prediction mode, use one frame every
     # this number needs to be low because we want to be able to detect the interesting frames
     # if too high, we will miss some interesting frames
-    predict_sampling = 60
+    predict_sampling = 10
 
     # keep this number of seconds before and after an interesting frame
     keep_after = 3  # sec
