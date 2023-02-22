@@ -6,8 +6,20 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+from concurrent.futures import ProcessPoolExecutor
+from loguru import logger as log
+
+def verify_image(img_path):
+    try:
+        img = Image.open(img_path)
+        img.verify()
+    except Exception:
+        log.warning(f'Failed to open {img_path}')
+        os.remove(img_path)
+        log.warning(f'Removed {img_path}')
+
 if __name__ == '__main__':
-    print('Randomizing...')
+    log.info('Randomizing...')
 
     images = glob.glob('inputs/**/*.png', recursive=True)
 
@@ -16,8 +28,8 @@ if __name__ == '__main__':
     train = [k for k in images if 'train' in k]
     valid = [k for k in images if 'valid' in k]
 
-    print(f'Found {len(train)} train images.')
-    print(f'Found {len(valid)} valid images.')
+    log.info(f'Found {len(train)} train images.')
+    log.info(f'Found {len(valid)} valid images.')
 
     train = np.random.choice(train, int(len(train) * ratio), replace=False)
     valid = np.random.choice(valid, int(len(valid) * (1 - ratio)), replace=False)
@@ -34,29 +46,18 @@ if __name__ == '__main__':
         new_path = path.replace('valid', 'train')
         shutil.move(path, new_path)              
 
-    print('Done.')
+    log.info('Done.')
 
     shutil.rmtree('inputs/models', ignore_errors=True)
 
-    print('Removed models.')
+    log.info('Removed models.')
 
-    print('Verifying image integrity...')
+    log.info('Verifying image integrity...')
     # The following code tries to open all images and removes them if they are corrupt.
     # This is needed because the handling of corrupt images is not very well
     # handled in fastai.
-    # The code only removes the first 10 corrupt images.
-    # This is a safety measure to prevent any data loss.
-    # We do not expect any corrupt images in the first place.
-    i = 0
+    
     images = glob.glob('inputs/**/*.png', recursive=True)
-    for image in tqdm(images):
-        try:
-            img = Image.open(image)
-            img.verify()
-        except Exception:
-            print(f'Failed to open {image}')
-            if i < 10:
-                #remove
-                os.remove(image)
-                i += 1
-                print(f'Removed {image}')
+
+    with ProcessPoolExecutor() as executor:
+        executor.map(verify_image, tqdm(images))
