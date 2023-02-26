@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     images = glob.glob('inputs/**/*.png', recursive=True)
 
-    ratio = 0.05
+    ratio = 0.1
 
     train = [k for k in images if 'train' in k]
     valid = [k for k in images if 'valid' in k]
@@ -60,4 +60,4 @@ if __name__ == '__main__':
     images = glob.glob('inputs/**/*.png', recursive=True)
 
     with ProcessPoolExecutor() as executor:
-        executor.map(verify_image, tqdm(images))
+        results = list(tqdm(executor.map(verify_image, images), total=len(images)))
