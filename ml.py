@@ -20,7 +20,7 @@ def create_model(train=False):
     data.add_tfms(Resize((100, 100), method='squish'), 'after_item')
     
     if train:
-        data.add_tfms(RandomResizedCrop((100, 100), min_scale=0.95), 'after_item')
+        data.add_tfms(RandomResizedCrop((100, 100), min_scale=0.90), 'after_item')
         #data.add_tfms(RandomErasing(), 'after_item')
 
     log.info("Creating Model.")
