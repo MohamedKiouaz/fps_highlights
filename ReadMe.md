@@ -1,10 +1,12 @@
 # FPS Highlighter
 
-Are you looking to create a highlights of your *best moments* in Apex Legends? Look no further! With this script, you can easily filter through your gameplay footage and extract only the most action-packed and exciting moments. Simply gather and label a dataset of interesting and not interesting frames, train a machine learning model, and let the script do the rest. The resulting video clip will feature all the *high-stakes battles* and *triumphant victories* you want to remember, without any of the dull downtime in between. Whether you're a seasoned pro or a newcomer to the game, this script is a must-have tool for any Apex Legends fan looking to relive their greatest moments.
+Are you looking to create a highlights of your *best moments* in Apex Legends? Look no further! With this script, you can easily filter through your gameplay footage and extract only the most action-packed and exciting moments. Simply install and use this tool and let the script do the rest. The resulting video clip will feature all the *high-stakes battles* and *triumphant victories* you want to remember, without any of the dull downtime in between. Whether you're a seasoned pro or a newcomer to the game, this script is a must-have tool for any Apex Legends fan looking to relive their greatest moments.
 
-Note that this script can also be used for other games : if it is possible to decide if a frame is interesting or not, only based on the content of the frame (and not the one before or the one after or the sound), then it is possible to use this script to filter through your game records.
+Not happy with the result? Fine thune the dataset in minutes! Add a few images to the dataset with the thing you want/don't want and you are good to go!
 
-Want to see what a highlights looks like? Check out this [video](https://streamable.com/46ze89) ! You can see that anything that isn't a kill or damage dealt is filtered out. The original  video is 2 mins long, but the highlights are only 48 seconds long.
+Note that this script can also be used for other games: if it is possible to decide if a frame is interesting or not, only based on the content of the frame (and not the one before or the one after or the sound), then it is possible to use this script to filter through your game records.
+
+Want to see what a highlights looks like? Check out this [video](https://streamable.com/46ze89)! You can see that anything that isn't a kill or damage dealt is filtered out. The original  video is 2 mins long, but the highlights are only 48 seconds long.
 
 ## Features
 
@@ -23,7 +25,7 @@ Want to see what a highlights looks like? Check out this [video](https://streama
 - Download this [model](https://drive.google.com/file/d/11_Zoim-StTNyQd62MSAv2JyK4VA-msA1/view?usp=sharing) `resnet18.pth` and place it in `inputs\models`.
 - In `main.py`, set the `folder` variable to the path to the directory containing the video files to be filtered.
 - Run the script using `python main.py` and wait for the script to finish.
-- Enjoy your new highlights !
+- Enjoy your new highlights!
 
 ### with your own dataset
 - Install Python (for the ones that know what they are doing, use a virtual environment)
@@ -36,7 +38,7 @@ Want to see what a highlights looks like? Check out this [video](https://streama
 - In `main.py`, set `generate_inputs=False`. This will use the machine learning model to filter the video.
 - In `main.py`, set the `folder` variable to the path to the directory containing the video files to be filtered.
 - Run the script using `python main.py` and wait for the script to finish.
-- Enjoy your new highlights !
+- Enjoy your new highlights!
 
 ## Tips
 
@@ -52,38 +54,35 @@ Use the following command to install the dependencies:
 
 ## Files
 
-- `main.py` : main script
-- `ml.py` : machine learning script
-- `graphs.py` : script for generating graphs
-- `apex_highlights.py` : all the functions
-- `randomize.py` : randomize the train and test sets, verify if all files can be opened with PIL (CAUTION: this will delete the trained models)
-- `requirements.txt` : list of dependencies
+- `main.py`: main script
+- `ml.py`: machine learning script
+- `graphs.py`: script for generating graphs
+- `apex_highlights.py`: all the functions
+- `randomize.py`: randomize the train and test sets, verify if all files can be opened with PIL (CAUTION: this will delete the trained models)
+- `requirements.txt`: list of dependencies
 
 ## Dataset
 
-You have to sort the pictures into 2 datasets. The proposed classes are :
-- `true` : interesting frames
+The dataset is composed of 2 folders: `true` and `false`.
+- `true`: interesting frames
   - hit markers
+  - damage visible on screen
   - 3 teams left
   - victory
-- `false` : not interesting frames
+  - last seconds of a heal or shield
+- `false`: not interesting frames
   - nothing happens in the game
   - every screenshot that isn't Apex Legends
 
-You need a minimum of 2k images in total.
-Make sure to have diverse images in your dataset:
+You may have complement the dataset with other images. Make sure to have diverse images in your dataset:
 - different backgrounds: sky, buildings, explosions, etc.
 - different weapons: snipers, shotguns, pistols, etc.
 - different champions and their abilities
 - if you choose to include the remaining teams counter, you need to have all of them (the 19).
 
-It looks like it will take forever to sort the images, but it's actually pretty quick. 
-You can sort 100 images per minutes if you use drag and drop.
-The images will be shown in a chronological order, so there is a logic to where you need to look.
+It looks like it will take forever to sort the images, but it's actually pretty quick. You can sort 100 images per minutes if you use drag and drop. The images will be shown in a chronological order, so there is a logic to where you need to look.
 
-Make sure that your dataset is of *good quality*.
-Any error in the sorting will impact heavely on the model.
-If in doubt, remove the image from the dataset, you can always add more images later.
+Make sure that your dataset is of *good quality*. Any error in the sorting will impact heavely on the model. If in doubt, remove the image from the dataset, you can always add more images later.
 
 ### Examples of interesting images
 
@@ -105,20 +104,14 @@ If in doubt, remove the image from the dataset, you can always add more images l
 
 ### Can I use your dataset?
 
-My dataset is not public for now but it will be in a near future. I'm currently working on a way to make it available to everyone.
+My dataset is not public for now. If you need it, you can contact me and I will send it to you.
 
 That being said, I play in french, high settings, 4K and record at 60fps.
-You and me probably don't have the same brightness either.
-In my dataset, there is a few images of my old 1080p setup, but most of them are from my current setup.
-This means that the images in my dataset are *probably* not compatible with your game settings.
-You will need to supplement the dataset with your own images.
-
-THAT BEING SAID, let's build a dataset together ! Once you have sorted your own images, you can send them to me and I will add them to the dataset. This way, we can all benefit from a better dataset.
+You and me probably don't have the same brightness either. In my dataset, there is a few images of my old 1080p setup, but most of them are from my current setup. This means that the images in my dataset are *probably* not compatible with your game settings. You will need to supplement the dataset with your own images. You can also send me your images and I will add them to the dataset.
 
 ## Contributing
 
-Pull requests are welcome.
-For major changes, please open an issue first to discuss what you would like to change.
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 For now, I am looking at 2 things:
 - Changing the repo to make the software work with most FPS (with hit markers). This needs to be done without changing the current code too much.
