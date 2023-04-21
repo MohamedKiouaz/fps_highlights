@@ -3,20 +3,10 @@ import os
 import shutil
 
 import numpy as np
-from PIL import Image
 from tqdm import tqdm
 
-from concurrent.futures import ProcessPoolExecutor
 from loguru import logger as log
-
-def verify_image(img_path):
-    try:
-        img = Image.open(img_path)
-        img.verify()
-    except Exception:
-        log.warning(f'Failed to open {img_path}')
-        os.remove(img_path)
-        log.warning(f'Removed {img_path}')
+from fastai.vision.utils import verify_images
 
 if __name__ == '__main__':
     log.info('Randomizing...')
@@ -38,10 +28,12 @@ if __name__ == '__main__':
     # (images from the same video could be used in both train and valid)
     # but it should work well enough for our purposes.
 
+    log.info(f'Moving {len(train)} randomly selected train images.')
     for path in tqdm(train):
         new_path = path.replace('train', 'valid')
         shutil.move(path, new_path)
 
+    log.info(f'Moving {len(valid)} randomly selected valid images.')
     for path in tqdm(valid):
         new_path = path.replace('valid', 'train')
         shutil.move(path, new_path)              
@@ -55,9 +47,20 @@ if __name__ == '__main__':
     log.info('Verifying image integrity...')
     # The following code tries to open all images and removes them if they are corrupt.
     # This is needed because the handling of corrupt images is not very well
-    # handled in fastai.
-    
+    # done in fastai.
+
     images = glob.glob('inputs/**/*.png', recursive=True)
 
-    with ProcessPoolExecutor() as executor:
-        results = list(tqdm(executor.map(verify_image, images), total=len(images)))
+    unreadable_images = verify_images(images)
+
+    if (len(unreadable_images) > 0):
+        log.warning(f'Found {len(unreadable_images)} unreadable images. Removing them...')
+
+        if (len(unreadable_images) > 100):
+            log.error('More than 100 unreadable images. Aborting.')
+            for img in unreadable_images:
+                log.error(f'{img} is unreadable.')
+        else:
+            for img in unreadable_images:
+                log.info(f'{img} is unreadable. Removing it.')
+                os.remove(img)

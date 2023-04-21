@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     log.info(f'Predicting {len(data.valid_ds)} images...')
     y_test = np.array([img[1].numpy() for img in data.valid_ds])
-    y = np.array([model.predict(img[0])[2][1].numpy() for img in tqdm(data.valid_ds)])
+    y = np.array([model.predict(img[0])[0][1].numpy() for img in tqdm(data.valid_ds)])
     imgs = [np.asarray(img[0]) for img in data.valid_ds]
 
     sorted_idxs = np.argsort(y_test)
