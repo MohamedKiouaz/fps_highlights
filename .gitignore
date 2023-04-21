@@ -1,4 +1,5 @@
 env/
+low_confidence/
 temp/
 *.mp4
 inputs/**/*.png
