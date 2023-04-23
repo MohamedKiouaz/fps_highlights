@@ -205,10 +205,15 @@ class FPSHighlighter:
                 for key in self.rois:
                     subframe = get_subframe(frame, self.rois[key], self.roi_size)
                     
-                    pred_class = self.predict_subframe(subframe)
+                    pred_class, pred_value = self.predict_subframe(subframe)
+
+                    confidence =  abs(pred_value - 0.5)
                     
-                    if i % (2 * self.predict_sampling) == 0:
-                        subframe_path = f"outputs/{pred_class}/{key}_{self.basename}_{t:.2f}.png"
+                    if i % (2 * self.predict_sampling) == 0 and confidence < 0.43 or i % (20 * self.predict_sampling) == 0:
+                        # We dump the data to the inputs folder to be able to retrain the model
+                        # we only dump the data if the confidence is low
+                        # or once in a while
+                        subframe_path = f"outputs/{pred_class}/{pred_value:.3f}_{key}_{self.basename}_{t:.2f}.png"
                         if not os.path.exists(subframe_path):
                             subframe = subframe.astype(np.uint8)
                             imageio.imwrite(subframe_path, subframe)
@@ -263,8 +268,9 @@ class FPSHighlighter:
         """
         with self.model.no_mbar():
             pred_class, pred_idx, outputs = self.model.predict(subframe)
+            ret = outputs.numpy()[0]
 
-        return pred_class
+        return pred_class, ret
 
     def generate_inputs(self):
         """
