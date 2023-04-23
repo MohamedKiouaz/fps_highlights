@@ -1,6 +1,5 @@
-numpy==1.20.3
+numpy
 moviepy
 fastai
 loguru
 tqdm
-PyQt5
