@@ -30,8 +30,8 @@ if __name__ == '__main__':
     predict_sampling = 10
 
     # keep this number of seconds before and after an interesting frame
-    keep_after = 3  # sec
-    keep_before = 3  # sec
+    keep_after = 0.75  # sec
+    keep_before = 0.75  # sec
 
     # default image size
     default_image_size = (1440, 2560)
