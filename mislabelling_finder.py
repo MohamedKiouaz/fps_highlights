@@ -17,7 +17,7 @@ if __name__ == '__main__':
     log.info(f'Validation set: {len(data.valid_ds)}')
 
     log.info("Predicting.")
-    # predict all images and the uncertain ones to a separate folder
+    # predict all images and move the uncertain ones to a separate folder
     # the reasoning behind this is that maybe those images are not in the right class
     # errors in the labeling process could have happened
     # this would explain why the model has troubles with them
