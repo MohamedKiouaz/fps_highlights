@@ -3,9 +3,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from fastai.metrics import accuracy
-from fastai.vision.data import ImageDataLoaders
-from fastai.vision.learner import vision_learner
-from fastai.vision.models import resnet18
 from loguru import logger as log
 from sklearn.metrics import auc, roc_curve
 from tqdm import tqdm
