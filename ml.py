@@ -1,12 +1,11 @@
 from pathlib import Path
 
-from fastai.metrics import RocAucBinary, accuracy
+from fastai.metrics import RocAuc, accuracy
 from fastai.vision.augment import RandomErasing, RandomResizedCrop, Resize
 from fastai.vision.data import ImageDataLoaders
 from fastai.vision.learner import vision_learner
 from fastai.vision.models import resnet18
 from loguru import logger as log
-from tqdm import tqdm
 
 from fps_functions import create_folders
 
@@ -24,7 +23,7 @@ def create_model(train=False):
         #data.add_tfms(RandomErasing(), 'after_item')
 
     log.info("Creating Model.")
-    model = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy,RocAucBinary()])
+    model = vision_learner(data, resnet18, bn_final=True, model_dir="models", metrics=[accuracy,RocAuc()])
 
     if Path('inputs/models/resnet18.pth').exists():
         log.info("Loading weights.")
@@ -34,7 +33,7 @@ def create_model(train=False):
     return model, data
 
 if __name__ == '__main__':
-    epochs = 5
+    epochs = 1
 
     create_folders()
 
@@ -46,12 +45,6 @@ if __name__ == '__main__':
     log.info("Creating model summary file.")
     with open('inputs/models/summary.txt', 'w+') as f:
         f.write(learn.summary())
-
-    #log.info("Validating.")
-    #log.info(learn.validate())
-
-    log.info("Printing confusion matrix.")
-    log.info(learn.show_results())
 
     for _ in range(epochs):
         log.info("Training.")

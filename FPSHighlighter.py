@@ -187,11 +187,11 @@ class FPSHighlighter:
             if i % self.predict_sampling != 0 or  i > mask.size or i < skip_to:
                 continue
 
-            if i > self.keep_before and mask[i-self.keep_before//2:i].max() > 0:
+            if i > self.keep_before and mask[int(i-self.keep_before/2):int(i)].max() > 0:
                 # No need to predict if this frame is already a neighbor of a highlight
                 continue
 
-            if i > 0 and i % (60 * self.predict_sampling) == 0:
+            if i > 0 and i % int(60 * self.predict_sampling) == 0:
                 np.save(f"temp/{self.basename}.npy", mask)
           
             try:

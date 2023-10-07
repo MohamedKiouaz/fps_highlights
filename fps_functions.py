@@ -11,7 +11,7 @@ def create_folders():
     """
     Create the folders where we will store the inputs and outputs
     """
-    folders = ['inputs/train', 'inputs/valid', 'outputs', 'low_confidence']
+    folders = ['inputs/train', 'inputs/valid', 'outputs', 'inputs/high_confidence', 'inputs/low_confidence']
     for folder in folders.copy():
         folders += _class_folders(folder)
 

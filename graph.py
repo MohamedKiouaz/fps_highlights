@@ -76,35 +76,36 @@ if __name__ == '__main__':
     save_path = Path('graphs')
     save_path.mkdir(exist_ok=True)
 
-    log.info(f'Predicting {len(data.valid_ds)} images...')
-    y_test = np.array([img[1].numpy() for img in data.valid_ds])
-    y = np.array([model.predict(img[0])[0][1].numpy() for img in tqdm(data.valid_ds)])
-    imgs = [np.asarray(img[0]) for img in data.valid_ds]
+    log.info(f'Predicting {len(data.valid_ds[:1000])} images...')
+    y_test = np.array([img[1].numpy() for img in data.valid_ds[:1000]])
+    imgs = [np.asarray(img[0]) for img in data.valid_ds[:1000]]
+    y = np.array([model.predict(img)[2].numpy() for img in tqdm(imgs)])
+    y_cat = np.argmax(y, axis=1)
 
     sorted_idxs = np.argsort(y_test)
     sorted_idxs = [e for i,e in enumerate(sorted_idxs) if i % 10 == 0]
     sorted_idxs = np.concatenate([sorted_idxs[:50], sorted_idxs[-50:]])
-    plot_n_images_by_idxs(imgs, y, y_test, save_path / 'random_images.png', sorted_idxs)
+    plot_n_images_by_idxs(imgs, y[:, 0], y_test, save_path / 'random_images.png', sorted_idxs)
 
     # Plot ROC curve
     log.info('Plotting ROC curve...')
-    plot_roc_curve(y_test, y, save_path / 'roc.png')
+    plot_roc_curve(y_test, y[:, 0], save_path / 'roc.png')
 
     # Plot most uncertain images
     log.info('Plotting most uncertain images...')
-    certainties =  abs(0.5 - y)
+    certainties =  abs(0.5 - y[:, 0])
     sorted_idxs = np.argsort(certainties)
 
-    plot_n_images_by_idxs(imgs, y, y_test, save_path / 'most_uncertain.png', sorted_idxs[:25])
+    plot_n_images_by_idxs(imgs, y[:, 0], y_test, save_path / 'most_uncertain.png', sorted_idxs[:25])
 
     sorted_y_test = [y_test[i] for i in sorted_idxs]
 
     # indexes of true values
     false_idxs = np.where(np.array(sorted_y_test) == 0)[0]
 
-    plot_n_images_by_idxs(imgs, y, y_test, save_path / 'most_uncertain_false.png', false_idxs[:25])
+    plot_n_images_by_idxs(imgs, y[:, 0], y_test, save_path / 'most_uncertain_false.png', false_idxs[:25])
 
     # indexes of true values
     true_idxs = np.where(np.array(sorted_y_test) == 1)[0]
 
-    plot_n_images_by_idxs(imgs, y, y_test, save_path / 'most_uncertain_true.png', true_idxs[:25])
+    plot_n_images_by_idxs(imgs, y[:, 0], y_test, save_path / 'most_uncertain_true.png', true_idxs[:25])
